@@ -1,0 +1,312 @@
+#!xPERLx -w
+#---------------------------------------------------------------------------
+#@COPYRIGHT :
+#             Copyright 1996, Alex P. Zijdenbos
+#             McConnell Brain Imaging Centre,
+#             Montreal Neurological Institute, McGill University.
+#             Permission to use, copy, modify, and distribute this
+#             software and its documentation for any purpose and without
+#             fee is hereby granted, provided that the above copyright
+#             notice appear in all copies.  The author and McGill University
+#             make no representations about the suitability of this
+#             software for any purpose.  It is provided "as is" without
+#             express or implied warranty.
+#---------------------------------------------------------------------------- 
+#$RCSfile: lgmask.pl,v $
+#$Revision: 1.1 $
+#$Author: jason $
+#$Date: 2002-04-09 17:19:06 $
+#$State: Exp $
+#---------------------------------------------------------------------------
+
+require "ctime.pl";
+#require "file_utilities.pl";
+#require "minc_utilities.pl";
+#require ParseArgs;
+
+use MNI::FileUtilities qw(:check);
+use MNI::MincUtilities qw(:history);
+
+use MNI::Startup;
+use MNI::Spawn;
+
+use Getopt::Tabular;
+
+&Initialize();
+
+if (!defined($Mask)) {
+    $Mask = &HeadMask($InFile);
+}
+
+&LowGradientMask();
+
+#&Cleanup(1);
+
+# ------------------------------ MNI Header ----------------------------------
+#@NAME       : &SetHelp
+#@INPUT      : none
+#@OUTPUT     : none
+#@RETURNS    : nothing
+#@DESCRIPTION: Sets the $Help and $Usage globals, and registers them
+#              with ParseArgs so that user gets useful error and help
+#              messages.
+#@METHOD     : 
+#@GLOBALS    : $Help, $Usage
+#@CALLS      : 
+#@CREATED    : 95/08/25, Greg Ward (from code formerly in &ParseArgs)
+#@MODIFIED   : 
+#-----------------------------------------------------------------------------
+sub SetHelp
+{
+   $Usage = <<USAGE;
+Usage: $ProgramName [options] <infile> <outfile>
+
+USAGE
+
+   $Help = <<HELP;
+
+$ProgramName 
+   creates a binary low gradient mask from the source volume by thresholding 
+   its gradient volume below the median. 
+
+HELP
+
+   &Getopt::Tabular::SetHelp ($Help, $Usage);
+}
+
+# ------------------------------ MNI Header ----------------------------------
+#@NAME       : &Initialize
+#@INPUT      : 
+#@OUTPUT     : 
+#@RETURNS    : 
+#@DESCRIPTION: Sets global variables, parses command line, finds required 
+#              programs, and sets their options.  Dies on any error.
+#@METHOD     : 
+#@GLOBALS    : general: $Verbose, $Execute, $Clobber, $KeepTmp
+#              mask:    $Mask
+#@CALLS      : &SetupArgTables
+#              &ParseArgs::Parse
+#              
+#@CREATED    : 96/04/27, Alex Zijdenbos
+#@MODIFIED   : 
+#-----------------------------------------------------------------------------
+sub Initialize
+{
+    chop ($ctime = &ctime(time));
+    $HistoryLine = "$ctime>>> $0 @ARGV\n";
+
+    $Clobber  = 0;
+    $Execute  = 1;
+    $Verbose  = 1;
+
+    $InputIsGradient = 0;
+    $SaveGradientFile = ();
+    $Mask = ();
+    $FWHM = 3;
+    $BlurDimensions = 3;
+    @SubSample = ();
+
+    &SetHelp;
+
+    ($LGargsTbl) = &SetupArgTables;
+
+    &GetOptions ([@DefaultArgs, @$LGargsTbl,], \@ARGV) || exit 1;
+
+    if ($#ARGV != 1) {
+	die "Please supply two file arguments!\n";
+    }
+    $InFile  = shift(@ARGV);
+    $OutFile = shift(@ARGV);
+
+    &check_files($InFile) || die;
+
+    $OutFile =~ s/\.(Z|gz|z)$//;
+    if (!$Clobber && -e $OutFile) {
+	die "Output file $OutFile exists; use -clobber to overwrite\n";
+    }
+
+    if ($InputIsGradient && !defined($Mask)) {
+      die "-mask required with -input_is_gradient\n";
+    }
+
+    MNI::Spawn::SetOptions("verbose" => $Verbose, 
+                           "execute" => $Execute,
+                           );
+    
+#     $SearchPath = defined($ENV{'MS_LESION'}) ? 
+# 	"$ENV{'MS_LESION'}/bin:$ENV{'MS_LESION'}/extern/bin" :
+# 	    "$ENV{'PATH'}:/usr/people/alex/Release/bin";	    
+    
+#     ($AutoCrop     = &FindProgram ("autocrop",     $SearchPath)) || &Fatal();
+#     ($MincBlur     = &FindProgram ("mincblur",     $SearchPath)) || &Fatal();
+#     ($HeadMask     = &FindProgram ("headmask",     $SearchPath)) || &Fatal();
+#     ($MincMath     = &FindProgram ("mincmath",     $SearchPath)) || &Fatal();
+#     ($MincResample = &FindProgram ("mincresample", $SearchPath)) || &Fatal();
+#     ($VolumeStats  = &FindProgram ("volume_stats", $SearchPath)) || &Fatal();
+
+    RegisterPrograms([qw(autocrop mincblur headmask mincmath mincresample volume_stats)]);
+
+    if ($Execute) {
+	&check_output_dirs($TmpDir) or die;
+	if (!$ENV{'TMPDIR'}) {
+	    $ENV{'TMPDIR'} = $TmpDir;
+	}
+    }
+}
+
+# ------------------------------ MNI Header ----------------------------------
+#@NAME       : &SetupArgTables
+#@INPUT      : none
+#@OUTPUT     : none
+#@RETURNS    : References to the option tables:
+#                @LGargs
+#@DESCRIPTION: Defines the tables of command line (and config file) 
+#              options that we pass to ParseArgs.  There are four
+#              separate groups of options, because not all of them
+#              are valid in all places.  See comments in the routine
+#              for details.
+#@METHOD     : 
+#@GLOBALS    : makes references to many globals (almost all of 'em in fact)
+#              even though most of them won't have been defined when
+#              this is called
+#@CALLS      : 
+#@CREATED    : 96/04/27, Alex Zijdenbos
+#@MODIFIED   : 
+#-----------------------------------------------------------------------------
+sub SetupArgTables
+{
+    my (@LGargs);
+
+    # Preferences -- these may be given in the configuration file
+    # or the command line
+
+    @LGargs = 
+	(["Mask options", "section"],
+	 ["-mask", "string", 1, \$Mask,
+	  "use this mask for threshold calculation. If not specified, a rough head mask will be derived by thresholding the source volume using a threshold  derived from the volume histogram"],
+	 ["-subsample", "float", 3, \@SubSample,
+	  "subsample by these factors in each dimension before blurring (must be three: x y z)"],
+	 ["-fwhm", "float", 1, \$FWHM,
+	  "use FWHM for the creation of low gradient masks [default: $FWHM]"],
+	 ["-dimensions", "integer", 1, \$BlurDimensions,
+	  "number of dimensions to blur (see mincblur) [default: $BlurDimensions]"],
+	 ["-input_is_gradient|-input_is_mri", "boolean", 1, \$InputIsGradient,
+	  "signals that <infile> is already a gradient volume (requires -mask)"],
+	 ["-save_gradient", "string", 1, \$SaveGradientFile,
+	  "save the gradient volume in this file"]);
+
+    (\@LGargs);
+}
+
+# ------------------------------ MNI Header ----------------------------------
+#@NAME       : &LowGradientMask
+#@INPUT      : none
+#@OUTPUT     : none
+#@RETURNS    : none
+#@DESCRIPTION: Creates a low-gradient mask, using mincblur with $FWHM. The 
+#              gradient volume will be thresholded below the median to produce
+#              the mask
+#@METHOD     : 
+#@GLOBALS    : Standard ($Execute, ...); $InFile, $OutFile, $Mask
+#@CALLS      : 
+#@CREATED    : 96/04/27, Alex Zijdenbos
+#@MODIFIED   : 
+#-----------------------------------------------------------------------------
+sub LowGradientMask {
+    if (!$InputIsGradient) {
+	my($blur) = "${TmpDir}/blur";
+
+	my($file) = $InFile;
+	# Create gradient volume
+	if (defined(@SubSample)) {
+	    my(@fileStart, @fileStep, @fileLength, @fileDircos);
+	    &volume_params($file, \@start, \@step, \@length, \@dircos);
+	    
+	    $SubSampledVol = "${TmpDir}/subsampled.mnc";
+	    foreach $s (@step) { $s *= shift(@SubSample); }
+        
+	    &Spawn("autocrop -step " . join(' ', @step) . " $file $SubSampledVol");
+	    $file = $SubSampledVol;
+	}
+
+	&Spawn("mincblur -gradient -fwhm $FWHM -dimensions $BlurDimensions $file $blur");
+	if (!$KeepTmp) {
+	    &Spawn("rm ${blur}_blur.mnc");
+	}
+
+	# Crop gradient volume
+	my($grad) = "${blur}_dxyz.mnc";
+	$FWHM *= 2.25; # Copied from mritotal (??)
+	# &Spawn(&AddOptions("$MincCrop -shell $FWHM $grad ${grad}_cropped", $Verbose, 1));
+	&Spawn("autocrop -isoextend -${FWHM}mm,-${FWHM}mm $grad ${grad}_cropped");
+
+	$final_grad = (defined($SaveGradientFile)) ? $SaveGradientFile : $grad;
+	
+	# Resample cropped gradient volume again to the same space
+	&Spawn("mincresample -clobber -like $InFile ${grad}_cropped $final_grad");
+	if (!$KeepTmp) {
+	    &Spawn("rm ${grad}_cropped");
+	}
+    }
+    else {
+	$final_grad = $InFile;
+    }
+
+    # Obtain gradient median over the mask area
+#    my($result, $stats, $floor, $ceil);
+	&Spawn("volume_stats -quiet -mask $Mask -floor 1e-10 -median $final_grad", stdout => \$ceil);
+#    $stats =~ /Min:\s+(\d.*)\n/i;
+#    $floor = $1;
+#    $stats =~ /Median:\s+(\d.*)\n/i;
+#    $ceil = $1;
+    chop($ceil);
+    
+    # Threshold the gradient volume at (below) the median
+    &Spawn("mincmath -byte -const $ceil -le $final_grad $OutFile");
+
+    print "Updating history\n" if $Verbose;
+    my(@history) = &get_history($InFile);
+    push(@history, $HistoryLine);
+    &put_history($OutFile, @history);
+    if (defined($SaveGradientFile)) {
+	&put_history($final_grad, @history);
+    }
+}  
+
+# ------------------------------ MNI Header ----------------------------------
+#@NAME       : &HeadMask
+#@INPUT      : $file
+#@OUTPUT     : none
+#@RETURNS    : $mask
+#@DESCRIPTION: Creates a rough non-BG mask
+#@METHOD     : 
+#@GLOBALS    : Standard ($Execute, ...)
+#@CALLS      : 
+#@CREATED    : 96/04/27, Alex Zijdenbos
+#@MODIFIED   : 
+#-----------------------------------------------------------------------------
+sub HeadMask {
+    my($file) = @_;
+
+    my($mask) = "${TmpDir}/headmask.mnc";
+    &Spawn("headmask $file $mask");
+
+    $mask;
+}
+
+sub AddOptions {
+    my($string, $verbose, $clobber) = @_;
+
+    if ($clobber) {
+	$string =~ s/^([^\s]+)(.*)$/$1 -clobber$2/;
+    }
+
+    if ($verbose) {
+	$string =~ s/^([^\s]+)(.*)$/$1 -verbose$2/;
+    }
+    else {
+	$string =~ s/^([^\s]+)(.*)$/$1 -quiet$2/;
+    }
+
+    $string;
+}
