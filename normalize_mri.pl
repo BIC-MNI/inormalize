@@ -1,0 +1,582 @@
+#!xPERLx -w
+#---------------------------------------------------------------------------
+#@COPYRIGHT :
+#             Copyright 1996, Alex P. Zijdenbos
+#             McConnell Brain Imaging Centre,
+#             Montreal Neurological Institute, McGill University.
+#             Permission to use, copy, modify, and distribute this
+#             software and its documentation for any purpose and without
+#             fee is hereby granted, provided that the above copyright
+#             notice appear in all copies.  The author and McGill University
+#             make no representations about the suitability of this
+#             software for any purpose.  It is provided "as is" without
+#             express or implied warranty.
+#---------------------------------------------------------------------------- 
+#$RCSfile: normalize_mri.pl,v $
+#$Revision: 1.1 $
+#$Author: jason $
+#$Date: 2002-03-28 23:53:20 $
+#$State: Exp $
+#---------------------------------------------------------------------------
+
+# require "ctime.pl";
+# require "file_utilities.pl";
+# require "path_utilities.pl";
+# require "minc_utilities.pl";
+# require "misc_utilities.pl";
+# require ParseArgs;
+
+require "ctime.pl";
+
+use MNI::Startup;
+
+use MNI::FileUtilities qw(:check);
+use MNI::PathUtilities qw(:all);
+use MNI::MincUtilities qw(:history);
+use MNI::MiscUtilities;
+use Getopt::Tabular;
+
+use MNI::Spawn;
+
+#&Startup();
+
+&Initialize();
+
+if (defined($Mask)) {
+    push(@Masks, $Mask);
+}
+
+# Create approximate brain mask if it was not specified
+if (!defined($BrainMask) && !defined($Mask)) {
+    $BrainMask = &BrainMask($InFile);
+}
+
+if (defined($BrainMask)) {
+    push(@Masks, $BrainMask);
+}
+
+if (!defined($Mask) && ($FWHM > 0)) {
+    # Create low-gradient mask
+    my($lgMask) = "$TmpDir/low_gradient_mask.mnc";
+    &Spawn("lgmask -mask $BrainMask -fwhm $FWHM -dimensions $BlurDimensions $InFile $lgMask");
+    push (@Masks, $lgMask);
+}
+
+if (defined($Model)) {
+    if (defined($ModelMask)) {
+	push(@Masks, $ModelMask);
+    }
+    elsif ($FWHM > 0) {
+	# Create low-gradient mask
+	my($modelLGmask) = "$TmpDir/low_gradient_mask_model.mnc";
+	if (defined($BrainMask)) {
+	    &Spawn("lgmask -mask $BrainMask -fwhm $FWHM -dimensions $BlurDimensions $InFile $modelLGmask");
+	}
+	else {
+	    &Spawn("lgmask -fwhm $FWHM -dimensions $BlurDimensions $InFile $modelLGmask");
+	}
+	push (@Masks, $modelLGmask);
+    }
+}
+
+# Combine masks
+$Mask = &CombineMasks(@Masks);
+
+# Create history attribute
+@History = &get_history($InFile);
+push(@History, $HistoryLine);
+&put_history($Mask, @History);
+
+if ($SaveMask) {
+    $SaveMask = &RemoveZext($SaveMask);
+    &Spawn("cp $Mask $SaveMask");
+    
+    if ($Compress) {
+	&Spawn("gzip -f $SaveMask");
+    }
+}
+
+$NormalizeCmd = "inormalize -clobber -useVoxelCoord";
+if (defined($InormOptions)) {
+    $NormalizeCmd .= " $InormOptions";
+}
+$NormalizeCmd .= ($Verbose) ? " -verbose" : " -quiet";
+if (defined($Model)) { 
+    $NormalizeCmd .= " -model $Model"; 
+}
+$NormalizeCmd .= " -mask $Mask $InFile $OutFile";
+
+&Spawn($NormalizeCmd);
+
+@InormHistory = &get_history($OutFile);
+
+# Mask output if requested
+if ($MaskOutput) {
+  my($tempOutput) = "$TmpDir/temp_output.mnc";
+  &Spawn("mv $OutFile $tempOutput");
+  &Spawn("mincmath -mult $tempOutput $BrainMask $OutFile");
+}
+
+push(@History, pop(@InormHistory));
+&put_history($OutFile, @History);
+
+# Compress output file
+if ($Compress) {
+    &Spawn("gzip -f $OutFile");
+}
+
+#&Cleanup(1);
+
+# ------------------------------ MNI Header ----------------------------------
+#@NAME       : &SetHelp
+#@INPUT      : none
+#@OUTPUT     : none
+#@RETURNS    : nothing
+#@DESCRIPTION: Sets the $Help and $Usage globals, and registers them
+#              with ParseArgs so that user gets useful error and help
+#              messages.
+#@METHOD     : 
+#@GLOBALS    : $Help, $Usage
+#@CALLS      : 
+#@CREATED    : 95/08/25, Greg Ward (from code formerly in &ParseArgs)
+#@MODIFIED   : 
+#-----------------------------------------------------------------------------
+sub SetHelp
+{
+   $Usage = <<USAGE;
+Usage: $ProgramName [options] <infile> <outfile>
+
+USAGE
+
+   $Help = <<HELP;
+
+$ProgramName 
+  is a wrapper around inormalize, 
+  automatically creating low-gradient masks when necessary.
+
+HELP
+
+   &Getopt::Tabular::SetHelp ($Help, $Usage);
+}
+
+# ------------------------------ MNI Header ----------------------------------
+#@NAME       : &Initialize
+#@INPUT      : 
+#@OUTPUT     : 
+#@RETURNS    : 
+#@DESCRIPTION: Sets global variables, parses command line, finds required 
+#              programs, and sets their options.  Dies on any error.
+#@METHOD     : 
+#@GLOBALS    : general: $Verbose, $Execute, $Clobber, $KeepTmp
+#              mask:    $Mask
+#@CALLS      : &SetupArgTables
+#              &ParseArgs::Parse
+#              
+#@CREATED    : 96/01/20, Alex Zijdenbos
+#@MODIFIED   : 
+#-----------------------------------------------------------------------------
+sub Initialize
+{
+    chop ($ctime = &ctime(time));
+    $HistoryLine = "$ctime>>> $0 @ARGV";
+
+    $Clobber   = 0;
+    $Execute   = 1;
+    $Verbose   = 1;
+    $Compress  = 0;
+
+    $InormDefault = "-znorm";
+    $InormOptions = ();
+    $UseLG     = 1;
+    $FWHM      = 3;
+    $BlurDimensions = 3;
+    $SaveMask  = ();
+    $Mask      = ();
+    $BrainMask = ();
+    $BrainMaskTransform = ();
+    $Nerosions = 0;
+    $MaskOutput = 0;
+    $Model     = ();
+    $ModelMask = ();
+
+    # Locate programs
+#    $SearchPath = defined($ENV{'MS_LESION'}) ? 
+#	"$ENV{'MS_LESION'}/bin:$ENV{'MS_LESION'}/extern/bin" :
+#	    "$ENV{'PATH'}:/usr/people/alex/Release/bin:/usr/people/david/public_bin";
+
+    &RegisterPrograms (["dilate_volume",
+                        "inormalize",
+                        "lgmask",
+                        "mincmath",
+                        "mincresample",
+                        "resample_labels",
+                        "volume_stats"]);
+    #     ($Inormalize     = &FindProgram ("inormalize",      $SearchPath)) || &Fatal();
+#     ($CreateLGmask   = &FindProgram ("lgmask",          $SearchPath)) || &Fatal();
+#     ($MincMath       = &FindProgram ("mincmath",        $SearchPath)) || &Fatal();
+#     ($MincResample   = &FindProgram ("mincresample",    $SearchPath)) || &Fatal();
+#     ($ResampleLabels = &FindProgram ("resample_labels", $SearchPath)) || &Fatal();
+#     ($VolumeStats    = &FindProgram ("volume_stats",    $SearchPath)) || &Fatal();
+
+    &SetHelp;
+
+    # Setup arg tables and parse args
+    ($InormArgsTbl, $MaskArgsTbl, $LGargsTbl, $outputArgsTbl) = &SetupArgTables;
+
+    GetOptions ([@DefaultArgs, @$InormArgsTbl, @$MaskArgsTbl,
+	@$LGargsTbl, @$outputArgsTbl], \@ARGV) || &Fatal();
+
+    if ($Execute) {
+	&check_output_dirs($TmpDir);
+	if (!$ENV{'TMPDIR'}) {
+	    $ENV{'TMPDIR'} = $TmpDir;
+	}
+    }
+
+    MNI::Spawn::SetOptions("verbose" => $Verbose, 
+			    "execute" => $Execute,
+                          );    
+    &AddOption(($Verbose) ? '-verbose' : '-quiet', 
+	       [\$Inormalize, 
+		\$CreateLGmask,
+		\$MincMath,
+		\$MincResample,
+		\$ResampleLabels]);
+    
+    # Check args
+    if ($#ARGV < 1) {
+      die $Usage;
+    }
+
+    $OutFile = pop(@ARGV);
+    $InFile  = pop(@ARGV);
+
+    &check_files($InFile) || die "\n";
+
+    if (defined($Mask)) {
+	&CheckFiles($Mask) || &Fatal();
+	($Mask = &CheckSampling($Mask, $InFile, 1, '-tricubic')) || &Fatal();
+    }
+
+    if (defined($BrainMask)) {
+	&CheckFiles($BrainMask) || &Fatal();
+	if (defined($BrainMaskTransform)) {
+	    $ResampledBrainMask = "${TmpDir}/resampled_brain_mask.mnc";
+	    &Spawn("resample_labels -trilinear -transformation $BrainMaskTransform -resample \'-like $InFile -invert_transformation\' $BrainMask $ResampledBrainMask");
+	    $BrainMask = $ResampledBrainMask;
+	}
+	else {
+	    ($BrainMask = &CheckSampling($BrainMask, $InFile, 1, '-trilinear')) || &Fatal();
+	}
+
+	if ($Nerosions > 0) {
+	    $ErodedBrainMask = "${TmpDir}/eroded_brain_mask.mnc";
+	    &Spawn("dilate_volume $BrainMask $ErodedBrainMask 0 6 $Nerosions");
+	    $BrainMask = $ErodedBrainMask;
+	}
+    }
+
+    if (defined($Model)) {
+	&CheckFiles($Model) || &Fatal();
+	($Model = &CheckSampling($Model, $InFile, 0, '-trilinear')) || &Fatal();
+    
+	if (defined($ModelMask)) {
+	    &CheckFiles($ModelMask) || &Fatal();
+	    ($ModelMask = &CheckSampling($ModelMask, $InFile, 1, '-tricubic')) || &Fatal();
+	}	
+    }
+
+    if (!$Clobber) {
+	if (&ExistsCompressed($OutFile)) {
+	    die "File $OutFile exists!\n";
+	}
+	if ($SaveMask && &ExistsCompressed($SaveMask)) {
+	    &Fatal("File $SaveMask exists!");
+	}
+    }
+
+    if ((defined($Mask) && defined($ModelMask)) || !$UseLG) {
+	$FWHM = 0;
+    }
+
+    if (defined($InormOptions)) {
+	$InormOptions =~ s/,/ /g;
+	$InormOptions =~ s/::/ /g;
+    }
+
+    if (!defined($InormOptions) && !defined($Model)) {
+	$InormOptions = $InormDefault;
+    }
+}
+
+# ------------------------------ MNI Header ----------------------------------
+#@NAME       : &SetupArgTables
+#@INPUT      : none
+#@OUTPUT     : none
+#@RETURNS    : References to the option tables:
+#                @inormArgs
+#                @maskArgs
+#                @LGargs
+#                @outputArgs
+#@DESCRIPTION: Defines the tables of command line (and config file) 
+#              options that we pass to ParseArgs.  There are four
+#              separate groups of options, because not all of them
+#              are valid in all places.  See comments in the routine
+#              for details.
+#@METHOD     : 
+#@GLOBALS    : makes references to many globals (almost all of 'em in fact)
+#              even though most of them won't have been defined when
+#              this is called
+#@CALLS      : 
+#@CREATED    : 96/01/29, Alex Zijdenbos
+#@MODIFIED   : 
+#-----------------------------------------------------------------------------
+sub SetupArgTables
+{
+    my (@inormArgs, @maskArgs, @LGargs, @outputArgs);
+
+    # Preferences -- these may be given in the configuration file
+    # or the command line
+
+    @inormArgs = 
+	(["Inormalize options", "section"],
+	 ["-inormalize", "string", 1, \$InormOptions,
+	  "pass these options directly to inormalize. Multiple options should be quoted or glued together using '::' or ',' to prevent the shell from breaking them up [default: \'$InormDefault\' if -model is not specified]"],
+	 ["-model", "string", 1, \$Model,
+	  "model for volume-to-volume normalization (passed to inormalize)"]);
+
+    @maskArgs = 
+	(["Mask options", "section"],
+	 ["-brainmask", "string", 1, \$BrainMask,
+	  "use this mask, rather than creating a rough head/brain mask by thresholding"],
+	 ["-transform", "string", 1, \$BrainMaskTransform,
+	  "the <infile> to <brainmask> transformation. If supplied, <brainmask> wil be transformed to the space of <infile> using the inverse of this transform"],
+	 ["-erode_brainmask", "integer", 1, \$Nerosions,
+	  "number of voxels to erode from the brain mask [default: $Nerosions; suggest: 2]"],
+	 ["-mask", "string", 1, \$Mask,
+	  "use this mask, rather than creating the low-gradient mask. If a brainmask is specified, these two masks will be combined"],
+	 ["-modelmask", "string", 1, \$ModelMask,
+	  "use this mask, rather than creating the low-gradient mask for the model. This mask will also be combined with <mask> and <brainmask> (if specified)"]);
+    
+    @LGargs = 
+	(["Low gradient mask options", "section"],
+	 ["-fwhm", "float", 1, \$FWHM,
+	  "use FWHM for the creation of low gradient masks [default: $FWHM]"],
+	 ["-dimensions", "integer", 1, \$BlurDimensions,
+	  "number of dimensions to blur when creating low gradient mask (see mincblur) [default: $BlurDimensions]"],
+	 ["-lg|-nolg", "boolean", 1, \$UseLG,
+	  "create low gradient masks [default; opposite is -nolg]"]);
+
+    @outputArgs = 
+	(["Output options", "section"],
+	 ["-compress|-nocompress", "boolean", 1, \$Compress,
+	  "compress the resulting output file(s) [default: -nocompress]"],
+	 ["-maskoutput", "string", 1, \$MaskOutput,
+	  "apply the supplied <brainmask> to <outfile>. If <brainmask> is not specified, a rough brain mask will be created and used"], 
+	 ["-savemask", "string", 1, \$SaveMask,	
+	  "save the low-gradient mask (if created) in this file"]);
+
+    (\@inormArgs, \@maskArgs, \@LGargs, \@outputArgs);
+}
+
+
+#-------------------------------------------------------------------------
+#
+# Create a rough brain mask by thresholding at an optimal threshold
+# derived from the histogram
+#
+#-------------------------------------------------------------------------
+sub BrainMask {
+    my($file) = @_;
+    my($dir, $base, $ext) = &split_path($file);
+    my($mask) = "$TmpDir/${base}_brainmask.mnc";
+    
+    # Obtain threshold value
+    if ($Execute) {
+      &Spawn("volume_stats -quiet -none -biModalT $file", stdout => \$T);
+      chop($T);
+    }
+
+    # Threshold the volume to obtain the mask
+    &Spawn("mincmath -const $T -ge $file $mask");
+    
+    $mask;
+}  
+
+#-------------------------------------------------------------------------
+#
+# Combine (AND, multiply) a series of masks.
+#
+#-------------------------------------------------------------------------
+sub CombineMasks {
+    my(@masks) = @_;
+    my($mask)  = "$TmpDir/final_mask.mnc";
+    
+    my($addMask) = shift(@masks);
+    if (&IsCompressed($addMask)) {
+      &Spawn("gunzip -c $addMask", $mask);
+    }
+    else {
+	&Spawn("cp $addMask $mask");
+    }
+    
+    while (@masks) {
+	$addMask = shift @masks;
+	my($tempMask) = "$TmpDir/temp_mask.mnc";
+	&Spawn("mincmath -clobber -mult $mask $addMask $tempMask");
+	&Spawn("mv $tempMask $mask");
+    }
+    
+    $mask;
+}
+
+# ------------------------------ MNI Header ----------------------------------
+#@NAME       : &CheckSampling
+#@INPUT      : $file, $model, $isLabelVolume, $interpolationOpt
+#@OUTPUT     : none
+#@RETURNS    : $file
+#@DESCRIPTION: Checks whether the sampling space of $file matches that of $model,
+#              and resamples $file if necessary (not allowing for transformations).
+#              when $isLabelVolume is true, resample_labels is used rather than
+#              mincresample.
+#                If specified, $interp should be (-trilinear|-tricubic)
+#@METHOD     : 
+#@GLOBALS    : Standard ($Execute, ...)
+#@CALLS      : 
+#@CREATED    : 96/03/19, Alex Zijdenbos
+#@MODIFIED   : 
+#-----------------------------------------------------------------------------
+sub CheckSampling {
+    my($file, $model, $isLabelVolume, $interp) = @_;
+
+    # Get file params
+    my(@fileStart, @fileStep, @fileLength, @fileDircos);
+    &volume_params($file, \@fileStart, \@fileStep, \@fileLength, \@fileDircos);
+
+    # Get model params
+    my(@modelStart, @modelStep, @modelLength, @modelDircos);
+    &volume_params($model, \@modelStart, \@modelStep, \@modelLength, \@modelDircos);
+ 
+    if (!&CompNumListsTol(\@fileDircos, \@modelDircos, 1e-5)) {
+	print "Direction cosines of $file and $model do not match\n";
+	return 0;
+    }
+    
+    # Resample $file if params are different
+    if (!&CompNumListsTol(\@fileStart, \@modelStart, 1e-5) ||
+	!&CompNumListsTol(\@fileStep, \@modelStep, 1e-5) ||
+	!&CompNumListsTol(\@fileLength, \@modelLength, 1e-5)) {
+	if ($Verbose) {
+	    print "Resampling $file like $model\n";
+	}
+	my($resampledFile) = &UniqueOutputFile(&ReplaceDir($TmpDir, $file));
+
+	if (defined($isLabelVolume) && $isLabelVolume) {
+	    &Spawn("resample_labels $interp -resample \'-like $model\' $file $resampledFile");
+	}
+	else {
+	    &Spawn("mincreample $interp -like $model $file $resampledFile");
+	}
+	$file = $resampledFile;
+    }
+
+    $file;
+}
+
+# ------------------------------ MNI Header ----------------------------------
+#@NAME       : &CompNumListsTol
+#@INPUT      : list1, list2, tolerance
+#@OUTPUT     : 
+#@RETURNS    : 1 if lists are same within given tolerance
+#              0 otherwise
+#@DESCRIPTION: 
+#@METHOD     : 
+#@GLOBALS    : 
+#@CALLS      : 
+#@CREATED    : June 3, 1996
+#@MODIFIED   : 
+#-----------------------------------------------------------------------------
+sub CompNumListsTol
+{
+    &Fatal("CompNumListsTol: wrong number of arguments") unless (@_ == 3);
+    my ($a1, $a2, $tol) = @_;
+   
+    return 0 unless (@$a1 == @$a2);
+    for $i (0 .. $#$a1)
+    {
+	return 0 
+	    unless (abs($a1->[$i]-$a2->[$i]) < $tol);
+    }
+    return 1;
+}
+
+sub UniqueOutputFile {
+    my(@files) = @_;
+    my($file);
+
+    foreach $file (@files) {
+	$file =~ s/\.(Z|gz|z)$//;
+	while (-e $file) {
+	    $file .= '_';
+	}
+    }
+
+    return @files if wantarray;
+    return $files[0];
+}
+
+#-------------------------------------------------------------------------
+#
+# Checks whether the specified path exists, possibly in compressed form;
+# returns the expanded path
+#
+#-------------------------------------------------------------------------
+sub ExistsCompressed {
+  my($arg) = @_;
+  my($baseName, $extension) = $arg =~ /^(.+)(|\.gz|\.z|\.Z)$/;
+  my($fileName) = $baseName;
+
+  if (!(-e $fileName)) {
+    $fileName = "$baseName.gz";
+    if (!(-e $fileName)) {
+      $fileName = "$baseName.z";
+      if (!(-e $fileName)) {
+	$fileName = "$baseName.Z";
+	if (!(-e $fileName)) {
+	  $fileName = ();
+	}
+      }
+    }
+  }
+  
+  $fileName;
+}
+
+#-------------------------------------------------------------------------
+#
+# Checks whether the specified path has a compressed (.gz/.z/.Z) extension
+#
+#-------------------------------------------------------------------------
+sub IsCompressed {
+  my($path) = @_;
+  $path =~ /(\.gz|\.z|\.Z)$/;
+}
+
+#-------------------------------------------------------------------------
+#
+# Removes a possible compression extension (.z/.Z/.gz) from the argument
+#
+#-------------------------------------------------------------------------
+sub RemoveZext {
+  my($path) = @_;
+  $path =~ s/(\.gz|\.z|\.Z)$//;
+  $path;
+}
+
+sub AddOption {
+    my($option, $program) = @_;
+
+    foreach $prog (@$program) {
+	$$prog .= " $option";
+    }
+}

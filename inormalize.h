@@ -12,41 +12,41 @@
               express or implied warranty.
 ---------------------------------------------------------------------------- 
 $RCSfile: inormalize.h,v $
-$Revision: 1.1 $
+$Revision: 1.2 $
 $Author: jason $
-$Date: 2002-03-27 18:36:59 $
+$Date: 2002-03-28 23:53:20 $
 $State: Exp $
 --------------------------------------------------------------------------*/
 #ifndef _I_NORMALIZE_H
 #define _I_NORMALIZE_H
 
-#include "EBTKS/CachedArray.h"
+#include "EBTKS/SimpleArray.h"
 #include "InormalizeArgs.h"
 #include "EBTKS/Minc.h"
 #include "EBTKS/ValueMap.h"
 
 typedef SimpleArray<float>   FloatArray;
-typedef CachedArray<Boolean> CachedBoolArray;
-typedef CachedArray<float>   CachedFloatArray;
+typedef SimpleArray<Boolean> BoolArray;
+//typedef SimpleArray<float>   FloatArray;
 
 void      scanVoxelRange(const Volume volume, double *voxelMin, double *voxelMax);
-unsigned  getValidVoxels(const InormalizeArgs& args, CachedBoolArray& VV);
-void      floatArrayFromVolume(CachedFloatArray& array, const Volume volume, 
-			       const CachedBoolArray& validVoxels, unsigned *N = 0, 
+unsigned  getValidVoxels(const InormalizeArgs& args, BoolArray& VV);
+void      floatArrayFromVolume(FloatArray& array, const Volume volume, 
+			       const BoolArray& validVoxels, unsigned *N = 0, 
 			       int verbose = 0);
-void      floatArraysFromSlices(const Volume volume, const CachedBoolArray& validVoxels,
+void      floatArraysFromSlices(const Volume volume, const BoolArray& validVoxels,
 				unsigned axis, unsigned slice1, unsigned slice2, 
 				FloatArray& array1, FloatArray& array2);
-void      selfNormalizeMain(char *dimension, const CachedBoolArray& validVoxels,
+void      selfNormalizeMain(char *dimension, const BoolArray& validVoxels,
 			    const InormalizeArgs& args, MString& history);
 Array<LinearMap> 
-          selfNormalize(Volume volume, const CachedBoolArray& validVoxels, 
+          selfNormalize(Volume volume, const BoolArray& validVoxels, 
 			char *dimension, const InormalizeArgs& args, int method = -1);
 void      reMapVolume(Volume volume, const LinearMap& iMap, int verbose = 0);
 void      reMapVolume(Volume volume, int axis, const Array<LinearMap>& iMaps, 
 		      int verbose = 0);
-LinearMap determineMap(const CachedFloatArray& modelArray, 
-		       const CachedFloatArray& dataArray, 
+LinearMap determineMap(const FloatArray& modelArray, 
+		       const FloatArray& dataArray, 
 		       const InormalizeArgs& args, int method = -1);
 Boolean   saveVolume(const Volume volume, const Path& path, const Path& mincModel,
 		     const MString& history, int compress = 1, int verbose = 0);
@@ -54,6 +54,6 @@ MString&  appendToString(MString& string, const LinearMap& iMap);
 MString&  appendToString(MString& string, const Array<LinearMap>& iMaps);
 double    evaluateRMS(void *data, float *f);
 double    evaluateVR(void *data, float *f);
-FloatArray pctExtrema(const CachedFloatArray& array, double pct, int verbose = 0);
+FloatArray pctExtrema(const FloatArray& array, double pct, int verbose = 0);
 
 #endif

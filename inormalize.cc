@@ -12,9 +12,9 @@
               express or implied warranty.
 ---------------------------------------------------------------------------- 
 $RCSfile: inormalize.cc,v $
-$Revision: 1.1 $
+$Revision: 1.2 $
 $Author: jason $
-$Date: 2002-03-27 18:36:59 $
+$Date: 2002-03-28 23:53:19 $
 $State: Exp $
 --------------------------------------------------------------------------*/
 /* ----------------------------- MNI Header -----------------------------------
@@ -30,8 +30,13 @@ $State: Exp $
 @CALLS      : 
 @CREATED    : April 11, 1995 (Alex Zijdenbos)
 @MODIFIED   : $Log: inormalize.cc,v $
-@MODIFIED   : Revision 1.1  2002-03-27 18:36:59  jason
-@MODIFIED   : Initial revision
+@MODIFIED   : Revision 1.2  2002-03-28 23:53:19  jason
+@MODIFIED   : switched to SimpleArray from CachedArray as there appear to be IO problems in the cached array implementation
+@MODIFIED   :
+@MODIFIED   : Revision 1.1.1.1  2002/03/27 18:36:59  jason
+@MODIFIED   : First import of inormalize sources. Does not work perfectly yet,
+@MODIFIED   : especially the median estimation appears to fail.
+@MODIFIED   :
 @MODIFIED   :
 @MODIFIED   : Revision 1.6  1998/04/01 18:29:49  alex
 @MODIFIED   : Made OpTimers quiet if -quiet was specified
@@ -66,12 +71,12 @@ $State: Exp $
 
 class OptData {
 public:
-  const CachedFloatArray& modelArray;
-  const CachedFloatArray& dataArray;
+  const FloatArray& modelArray;
+  const FloatArray& dataArray;
   unsigned n;
   Boolean verbose;
 
-  OptData(const CachedFloatArray& ma, const CachedFloatArray& da, unsigned nEl,
+  OptData(const FloatArray& ma, const FloatArray& da, unsigned nEl,
 	  Boolean vb = FALSE) 
     : modelArray(ma),
       dataArray(da)
@@ -100,7 +105,7 @@ main(int argc, char *argv[])
   }
 
   // Determine valid voxels from the mask and threshold settings
-  CachedArray<Boolean> validVoxels;
+  SimpleArray<Boolean> validVoxels;
   unsigned nVoxels = getValidVoxels(args, validVoxels);
   if (args.verbose)
     cout << "Considering " << nVoxels << " voxels (" 
@@ -139,15 +144,18 @@ main(int argc, char *argv[])
     selfNormalizeMain(MIxspace, validVoxels, args, history);
 
   if (args.oneConst) {
-    CachedArray<float> volumeArray;
+    SimpleArray<float> volumeArray;
 
     floatArrayFromVolume(volumeArray, args.volume, validVoxels, &nVoxels, args.verbose);
 
     LinearMap iMap;
     if (args.method == InormalizeArgs::RATIO_OF_MEANS)
       iMap.factor(args.constants[0] / mean(volumeArray));
-    else if (args.method == InormalizeArgs::RATIO_OF_MEDIANS)
+    else if (args.method == InormalizeArgs::RATIO_OF_MEDIANS) {
       iMap.factor(args.constants[0] / median(volumeArray));
+      cout << median(volumeArray) << endl;
+      cout << mean(volumeArray) << endl;
+    }
     else {
       cerr << "Invalid method " << args.methods[args.method] << endl;
       exit(EXIT_FAILURE);
@@ -163,7 +171,7 @@ main(int argc, char *argv[])
   }
 
   else if (args.twoConst) {
-    CachedArray<float> volumeArray;
+    SimpleArray<float> volumeArray;
     floatArrayFromVolume(volumeArray, args.volume, validVoxels, &nVoxels, args.verbose);
 
     FloatArray extrema(pctExtrema(volumeArray, args.rangePct, args.verbose));
@@ -184,8 +192,8 @@ main(int argc, char *argv[])
 
   else if (args.model) {
     // Convert entire volume to float arrays (cached to conserve memory)
-    CachedArray<float> volumeArray;
-    CachedArray<float> modelArray;
+    SimpleArray<float> volumeArray;
+    SimpleArray<float> modelArray;
 
     floatArrayFromVolume(volumeArray, args.volume, validVoxels, &nVoxels, args.verbose);
     floatArrayFromVolume(modelArray, args.model, validVoxels, &nVoxels, args.verbose);
@@ -276,7 +284,7 @@ scanVoxelRange(const Volume volume, double *voxelMin, double *voxelMax)
 //
 //
 unsigned
-getValidVoxels(const InormalizeArgs& args, CachedBoolArray& validVoxels)
+getValidVoxels(const InormalizeArgs& args, BoolArray& validVoxels)
 {
   int sizes[3];
   get_volume_sizes(args.volume, sizes);
@@ -366,8 +374,8 @@ getValidVoxels(const InormalizeArgs& args, CachedBoolArray& validVoxels)
 //
 //
 void
-floatArrayFromVolume(CachedFloatArray& array, const Volume volume, 
-		     const CachedBoolArray& validVoxels, unsigned *N, 
+floatArrayFromVolume(FloatArray& array, const Volume volume, 
+		     const BoolArray& validVoxels, unsigned *N, 
 		     int verbose)
 {
   unsigned nVoxels = (N && *N) ? *N : validVoxels.occurrencesOf(TRUE);
@@ -407,7 +415,7 @@ floatArrayFromVolume(CachedFloatArray& array, const Volume volume,
 //
 //
 void
-floatArraysFromSlices(const Volume volume, const CachedBoolArray& validVoxels,
+floatArraysFromSlices(const Volume volume, const BoolArray& validVoxels,
 		      unsigned axis, unsigned slice1, unsigned slice2, 
 		      FloatArray& array1, FloatArray& array2)
 {
@@ -498,7 +506,7 @@ floatArraysFromSlices(const Volume volume, const CachedBoolArray& validVoxels,
 //
 //
 void
-selfNormalizeMain(char *dimension, const CachedBoolArray& validVoxels, 
+selfNormalizeMain(char *dimension, const BoolArray& validVoxels, 
 		  const InormalizeArgs& args, MString& history)
 {
   for (unsigned method = 0; method < args.nMethods; method++)
@@ -520,7 +528,7 @@ selfNormalizeMain(char *dimension, const CachedBoolArray& validVoxels,
 //
 //
 Array<LinearMap>
-selfNormalize(Volume volume, const CachedBoolArray& validVoxels, char *dimension, 
+selfNormalize(Volume volume, const BoolArray& validVoxels, char *dimension, 
 	      const InormalizeArgs& args, int method)
 {
   if (method < -1)
@@ -723,7 +731,7 @@ reMapVolume(Volume volume, int axis, const Array<LinearMap>& iMaps, int verbose)
 //
 //
 LinearMap 
-determineMap(const CachedFloatArray& modelArray, const CachedFloatArray& dataArray, 
+determineMap(const FloatArray& modelArray, const FloatArray& dataArray, 
 	     const InormalizeArgs& args, int method)
 {
   unsigned nVoxels = size(modelArray);
@@ -743,7 +751,7 @@ determineMap(const CachedFloatArray& modelArray, const CachedFloatArray& dataArr
   if (method == InormalizeArgs::RMS) {
     OptData optData(modelArray, dataArray, nVoxels, args.verbose);
 
-    CachedFloatArray temp(modelArray);
+    FloatArray temp(modelArray);
 
     double f = temp.medianVolatile();
     temp = dataArray;
@@ -769,7 +777,7 @@ determineMap(const CachedFloatArray& modelArray, const CachedFloatArray& dataArr
   else if (method == InormalizeArgs::VR) {
     OptData optData(modelArray, dataArray, nVoxels, args.verbose);
 
-    CachedFloatArray temp(modelArray);
+    FloatArray temp(modelArray);
 
     double f = temp.medianVolatile();
     temp = dataArray;
@@ -796,14 +804,14 @@ determineMap(const CachedFloatArray& modelArray, const CachedFloatArray& dataArr
     map.factor() = mean(modelArray)/mean(dataArray);
   
   else if (method == InormalizeArgs::RATIO_OF_MEDIANS) {
-    CachedFloatArray temp(modelArray);
+    FloatArray temp(modelArray);
     map.factor() = temp.medianVolatile();
     temp = dataArray;
     map.factor() /= temp.medianVolatile();
   }
 
   else if (method == InormalizeArgs::MEAN_OF_RATIOS) {
-    CachedFloatArray temp(modelArray);
+    FloatArray temp(modelArray);
     temp /= dataArray;
     prune(temp);
 
@@ -820,7 +828,7 @@ determineMap(const CachedFloatArray& modelArray, const CachedFloatArray& dataArr
   }
 
   else if (method == InormalizeArgs::MEAN_OF_LOG_RATIOS) {
-    CachedFloatArray temp(modelArray);
+    FloatArray temp(modelArray);
     temp /= dataArray;
     temp = log(temp);
     prune(temp);
@@ -838,7 +846,7 @@ determineMap(const CachedFloatArray& modelArray, const CachedFloatArray& dataArr
   }
 
   else if (method == InormalizeArgs::MEDIAN_OF_RATIOS) {
-    CachedFloatArray temp(modelArray);
+    FloatArray temp(modelArray);
     temp /= dataArray;
     prune(temp);
 
@@ -988,7 +996,7 @@ evaluateVR(void *data, float *f)
 }
 
 FloatArray
-pctExtrema(const CachedFloatArray& array, double pct, int verbose)
+pctExtrema(const FloatArray& array, double pct, int verbose)
 {
   FloatArray extrema(2);
 
@@ -1008,7 +1016,7 @@ pctExtrema(const CachedFloatArray& array, double pct, int verbose)
   if (!nKill)
     array.extrema(&extrema[(unsigned int)0], &extrema[(unsigned int)1]);
   else {
-    CachedFloatArray temp(array);
+    FloatArray temp(array);
     temp.qsort();
     extrema[(unsigned int)0] = (temp[(unsigned int)nKill] + 
                                 temp[(unsigned int)nKill + 1])/2;

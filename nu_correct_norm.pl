@@ -1,0 +1,133 @@
+#!xPERLx -w
+ 
+#---------------------------------------------------------------------------
+#@COPYRIGHT :
+#             Copyright 1998, Alex P. Zijdenbos
+#             McConnell Brain Imaging Centre,
+#             Montreal Neurological Institute, McGill University.
+#             Permission to use, copy, modify, and distribute this
+#             software and its documentation for any purpose and without
+#             fee is hereby granted, provided that the above copyright
+#             notice appear in all copies.  The author and McGill University
+#             make no representations about the suitability of this
+#             software for any purpose.  It is provided "as is" without
+#             express or implied warranty.
+#---------------------------------------------------------------------------- 
+#$RCSfile: nu_correct_norm.pl,v $
+#$Revision: 1.1 $
+#$Author: jason $
+#$Date: 2002-03-28 23:53:20 $
+#$State: Exp $
+#---------------------------------------------------------------------------
+
+use MNI::Startup;
+use MNI::Spawn;
+use MNI::DataDir;
+use MNI::FileUtilities qw(check_output_dirs);
+use MNI::PathUtilities qw(replace_dir);
+use Getopt::Tabular;
+use IO::File;
+
+use strict;
+
+# User-modifiable globals
+my $Inputfile;
+my $Outputfile;
+
+# Other globals
+my($Usage, $Help);
+
+&Initialize;
+
+my $TmpFile = replace_dir ($TmpDir, $Inputfile);
+$TmpFile =~ s/\.(gz|z|Z)$//;
+
+Spawn(['nu_correct', $Inputfile, $TmpFile]);
+
+Spawn(['normalize_mri', '-nolg', '-inormalize', '-const 1000 -ratioOfMedians',
+       $TmpFile, $Outputfile]);
+
+# ------------------------------ MNI Header ----------------------------------
+#@NAME       : Initialize
+#@INPUT      : 
+#@OUTPUT     : 
+#@RETURNS    : 
+#@DESCRIPTION: 
+#@METHOD     : 
+#@GLOBALS    : 
+#@CALLS      : 
+#@CREATED    : 98/11/29, Alex Zijdenbos
+#@MODIFIED   : 
+#-----------------------------------------------------------------------------
+sub Initialize
+{
+   $, = ' ';     # set output field separator
+
+   # First, announce ourselves to stdout (for ease in later dissection
+   # of log files) -- unless STDOUT is a tty.
+   self_announce if $Verbose;
+
+   # Set defaults for the global variables.
+   $Verbose      = 1;
+   $Execute      = 1;
+   $Clobber      = 0;
+   $KeepTmp      = 0;
+
+   &CreateInfoText;
+
+   my(@argTbl) = (@DefaultArgs);
+   
+   my(@leftOverArgs);
+
+   GetOptions (\@argTbl, \@ARGV, \@leftOverArgs) || die "\n";
+   if (@leftOverArgs != 2) {
+       warn $Usage;
+       die "Incorrect number of arguments\n";
+   }
+
+   ($Inputfile, $Outputfile) = @leftOverArgs;
+
+   die "Output file $Outputfile exists! Use -clobber to overwrite\n"
+       if (-e $Outputfile && ! $Clobber);
+
+   RegisterPrograms([qw(nu_correct normalize_mri)]) || die;
+
+   AddDefaultArgs('nu_correct',     ($Verbose) ? ['-verbose'] : ['-quiet']);
+   AddDefaultArgs('normalize_mri',  ($Verbose) ? ['-verbose'] : ['-quiet']);
+
+   AddDefaultArgs('nu_correct',     ['-clobber']);
+   AddDefaultArgs('normalize_mri',  ['-clobber']);
+
+   &check_output_dirs($TmpDir) if $Execute;
+
+   # Be strict about having programs registered
+   MNI::Spawn::SetOptions (strict => 2);
+}
+
+# ------------------------------ MNI Header ----------------------------------
+#@NAME       : CreateInfoText
+#@INPUT      : 
+#@OUTPUT     : 
+#@RETURNS    : 
+#@DESCRIPTION: 
+#@METHOD     : 
+#@GLOBALS    : 
+#@CALLS      : 
+#@CREATED    : 98/11/29, Alex Zijdenbos
+#@MODIFIED   : 
+#-----------------------------------------------------------------------------
+sub CreateInfoText
+{
+    $Usage = <<USAGE;
+Usage: $ProgramName [options] <input.mnc> <output.mnc> 
+       $ProgramName -help for details
+USAGE
+
+    $Help = <<HELP;
+
+$ProgramName nu_corrects and normalizes <input.mnc>.
+The global intensity normalization targets an absolute median value of 1000.
+HELP
+
+   Getopt::Tabular::SetHelp ($Help, $Usage);
+}
