@@ -12,7 +12,7 @@
               express or implied warranty.
 ---------------------------------------------------------------------------- 
 $RCSfile: inormalize.h,v $
-$Revision: 1.1 $
+$Revision: 1.1.1.1 $
 $Author: jason $
 $Date: 2002-03-27 18:36:59 $
 $State: Exp $

@@ -12,7 +12,7 @@
               express or implied warranty.
 ---------------------------------------------------------------------------- 
 $RCSfile: inormalize.cc,v $
-$Revision: 1.1 $
+$Revision: 1.1.1.1 $
 $Author: jason $
 $Date: 2002-03-27 18:36:59 $
 $State: Exp $
@@ -30,8 +30,10 @@ $State: Exp $
 @CALLS      : 
 @CREATED    : April 11, 1995 (Alex Zijdenbos)
 @MODIFIED   : $Log: inormalize.cc,v $
-@MODIFIED   : Revision 1.1  2002-03-27 18:36:59  jason
-@MODIFIED   : Initial revision
+@MODIFIED   : Revision 1.1.1.1  2002-03-27 18:36:59  jason
+@MODIFIED   : First import of inormalize sources. Does not work perfectly yet,
+@MODIFIED   : especially the median estimation appears to fail.
+@MODIFIED   :
 @MODIFIED   :
 @MODIFIED   : Revision 1.6  1998/04/01 18:29:49  alex
 @MODIFIED   : Made OpTimers quiet if -quiet was specified
