@@ -12,9 +12,9 @@
               express or implied warranty.
 ---------------------------------------------------------------------------- 
 $RCSfile: inormalize.cc,v $
-$Revision: 1.2 $
-$Author: jason $
-$Date: 2002-03-28 23:53:19 $
+$Revision: 1.3 $
+$Author: bert $
+$Date: 2005-08-17 23:14:26 $
 $State: Exp $
 --------------------------------------------------------------------------*/
 /* ----------------------------- MNI Header -----------------------------------
@@ -30,7 +30,10 @@ $State: Exp $
 @CALLS      : 
 @CREATED    : April 11, 1995 (Alex Zijdenbos)
 @MODIFIED   : $Log: inormalize.cc,v $
-@MODIFIED   : Revision 1.2  2002-03-28 23:53:19  jason
+@MODIFIED   : Revision 1.3  2005-08-17 23:14:26  bert
+@MODIFIED   : Minor changes for some C++ warnings and issues
+@MODIFIED   :
+@MODIFIED   : Revision 1.2  2002/03/28 23:53:19  jason
 @MODIFIED   : switched to SimpleArray from CachedArray as there appear to be IO problems in the cached array implementation
 @MODIFIED   :
 @MODIFIED   : Revision 1.1.1.1  2002/03/27 18:36:59  jason
@@ -60,7 +63,8 @@ $State: Exp $
 ---------------------------------------------------------------------------- */
 
 #include "inormalize.h"
-#include <iostream.h>
+#include <iostream>
+using namespace std;
 #include <time.h>
 #include "EBTKS/CachedArray.h"
 #include "EBTKS/Dictionary.h"

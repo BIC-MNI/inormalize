@@ -12,15 +12,17 @@
               express or implied warranty.
 ---------------------------------------------------------------------------- 
 $RCSfile: InormalizeArgs.h,v $
-$Revision: 1.1 $
-$Author: jason $
-$Date: 2002-03-27 18:36:59 $
+$Revision: 1.2 $
+$Author: bert $
+$Date: 2005-08-17 23:14:26 $
 $State: Exp $
 --------------------------------------------------------------------------*/
 #ifndef _I_NORMALIZE_ARGS_H
 #define _I_NORMALIZE_ARGS_H
 
+extern "C" {			/* (bert)-use C linkage */
 #include <ParseArgv.h>
+}
 #include "EBTKS/Minc.h"
 #include "EBTKS/Path.h"
 

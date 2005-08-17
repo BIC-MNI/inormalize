@@ -12,13 +12,14 @@
               express or implied warranty.
 ---------------------------------------------------------------------------- 
 $RCSfile: InormalizeArgs.cc,v $
-$Revision: 1.1 $
-$Author: jason $
-$Date: 2002-03-27 18:36:59 $
+$Revision: 1.2 $
+$Author: bert $
+$Date: 2005-08-17 23:14:26 $
 $State: Exp $
 --------------------------------------------------------------------------*/
 #include "InormalizeArgs.h"
-#include <iostream.h>
+#include <iostream>
+using namespace std;
 
 int    InormalizeArgs::clobber = FALSE;
 int    InormalizeArgs::verbose = TRUE;
@@ -63,21 +64,21 @@ const int InormalizeArgs::nMethods = 8;
 ArgvInfo InormalizeArgs::argTable[] = {
   {NULL, ARGV_HELP, (char *) NULL, (char *) NULL, 
    "General options:"},
-  {"-clobber", ARGV_CONSTANT, (char *) TRUE, (char *) &InormalizeArgs::clobber, 
+  {"-clobber", ARGV_CONSTANT, (char *) (int) TRUE, (char *) &InormalizeArgs::clobber, 
    "Overwrite existing file."},
-  {"-noclobber", ARGV_CONSTANT, (char *) FALSE, (char *) &InormalizeArgs::clobber, 
+  {"-noclobber", ARGV_CONSTANT, (char *) (int) FALSE, (char *) &InormalizeArgs::clobber, 
    "Do not overwrite existing file (default)."},
-  {"-verbose", ARGV_CONSTANT, (char *) TRUE, (char *) &InormalizeArgs::verbose, 
+  {"-verbose", ARGV_CONSTANT, (char *) (int) TRUE, (char *) &InormalizeArgs::verbose, 
    "Print out log messages as processing is being done (default)."},
-  {"-quiet", ARGV_CONSTANT, (char *) FALSE, (char *) &InormalizeArgs::verbose, 
+  {"-quiet", ARGV_CONSTANT, (char *) (int) FALSE, (char *) &InormalizeArgs::verbose, 
    "Do not print out any log messages."},
-  {"-print", ARGV_CONSTANT, (char *) TRUE, (char *) &InormalizeArgs::printValues, 
+  {"-print", ARGV_CONSTANT, (char *) (int) TRUE, (char *) &InormalizeArgs::printValues, 
    "Calculate and print the values obtained with every solution method."},
-  {"-compress", ARGV_CONSTANT, (char *) TRUE, (char *) &InormalizeArgs::compress, 
+  {"-compress", ARGV_CONSTANT, (char *) (int) TRUE, (char *) &InormalizeArgs::compress, 
    "Compress <outfile>."},
-  {"-nocompress", ARGV_CONSTANT, (char *) FALSE, (char *) &InormalizeArgs::compress, 
+  {"-nocompress", ARGV_CONSTANT, (char *) (int) FALSE, (char *) &InormalizeArgs::compress, 
    "Do not compress <outfile> (default)."},
-  {"-nocache", ARGV_CONSTANT, (char *) FALSE, (char *) &InormalizeArgs::cache, 
+  {"-nocache", ARGV_CONSTANT, (char *) (int) FALSE, (char *) &InormalizeArgs::cache, 
    "Do not use volume caching."},
 
   {NULL, ARGV_HELP, (char *) NULL, (char *) NULL, 
@@ -90,18 +91,18 @@ ArgvInfo InormalizeArgs::argTable[] = {
    "Normalize the range of <infile> to const values or model.\n\t\t   Requires a float argument specifying the top- and bottom % to exclude, e.g., \"-range 5\""},
   {"-model", ARGV_STRING, (char *) 1, (char *) &InormalizeArgs::modelString,
    "Normalize <infile> to <model>."},
-  {"-znormalize", ARGV_CONSTANT, (char *) TRUE, (char *) &InormalizeArgs::zNormalize,
+  {"-znormalize", ARGV_CONSTANT, (char *) (int) TRUE, (char *) &InormalizeArgs::zNormalize,
    "Normalize <infile> in z."},
-  {"-ynormalize", ARGV_CONSTANT, (char *) TRUE, (char *) &InormalizeArgs::yNormalize,
+  {"-ynormalize", ARGV_CONSTANT, (char *) (int) TRUE, (char *) &InormalizeArgs::yNormalize,
    "Normalize <infile> in y."},
-  {"-xnormalize", ARGV_CONSTANT, (char *) TRUE, (char *) &InormalizeArgs::xNormalize,
+  {"-xnormalize", ARGV_CONSTANT, (char *) (int) TRUE, (char *) &InormalizeArgs::xNormalize,
    "Normalize <infile> in x."},
 
   {NULL, ARGV_HELP, (char *) NULL, (char *) NULL, 
    "\nSolution options:"},
   {"-minvoxels", ARGV_INT, (char *) 1, (char *) &InormalizeArgs::minVoxels,
    "Minimum number of voxels needed for estimation."},
-  {"-constrained", ARGV_CONSTANT, (char *) TRUE, (char *)&InormalizeArgs::constrained,
+  {"-constrained", ARGV_CONSTANT, (char *) (int) TRUE, (char *)&InormalizeArgs::constrained,
    "Constrain the ratio array to [10e-0.1, 10e+0.1]"},
   {"-rms", ARGV_CONSTANT, (char *) InormalizeArgs::RMS, (char *) &InormalizeArgs::method,
    "Minimize RMS voxel difference."},
@@ -122,9 +123,9 @@ ArgvInfo InormalizeArgs::argTable[] = {
    "\nMask options:"},
   {"-mask", ARGV_STRING, (char *) 1, (char *) &InormalizeArgs::maskString,
    "Ignore voxels for which <mask> is zero."},
-  {"-useVoxelCoord", ARGV_CONSTANT, (char *)FALSE,(char *)&InormalizeArgs::useWorldCoord,
+  {"-useVoxelCoord", ARGV_CONSTANT, (char *) (int) FALSE,(char *)&InormalizeArgs::useWorldCoord,
    "Use voxel coordinates when matching mask (default)."},
-  {"-useWorldCoord", ARGV_CONSTANT, (char *) TRUE,(char *)&InormalizeArgs::useWorldCoord,
+  {"-useWorldCoord", ARGV_CONSTANT, (char *) (int) TRUE,(char *)&InormalizeArgs::useWorldCoord,
    "Use world coordinates when matching mask."},
   {"-threshold", ARGV_FLOAT, (char *) 2, 
    (char *) InormalizeArgs::thresholds,
@@ -136,7 +137,7 @@ ArgvInfo InormalizeArgs::argTable[] = {
   {"-matlab", ARGV_STRING, (char *) 1, (char *)&InormalizeArgs::matlabOutputString,
    "Save a sample (max 10000 points) of the voxels used in a matlab (.mat) file (-model only)."},
 #endif
-  {"-nonormalize", ARGV_CONSTANT, (char *) FALSE, (char *) &InormalizeArgs::normalize,
+  {"-nonormalize", ARGV_CONSTANT, (char *) (int) FALSE, (char *) &InormalizeArgs::normalize,
    "Do not actually normalize the input volume (calculate mapping(s) only).\n"},
 
   {NULL, ARGV_END, NULL, NULL, NULL}
