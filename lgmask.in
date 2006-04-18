@@ -1,4 +1,5 @@
-#!xPERLx -w
+#! @PERL@
+
 #---------------------------------------------------------------------------
 #@COPYRIGHT :
 #             Copyright 1996, Alex P. Zijdenbos
@@ -12,17 +13,16 @@
 #             software for any purpose.  It is provided "as is" without
 #             express or implied warranty.
 #---------------------------------------------------------------------------- 
-#$RCSfile: lgmask.pl,v $
+#$RCSfile: lgmask.in,v $
 #$Revision: 1.1 $
-#$Author: jason $
-#$Date: 2002-04-09 17:19:06 $
+#$Author: rotor $
+#$Date: 2006-04-18 19:10:37 $
 #$State: Exp $
 #---------------------------------------------------------------------------
 
 require "ctime.pl";
-#require "file_utilities.pl";
-#require "minc_utilities.pl";
-#require ParseArgs;
+
+use warnings "all";
 
 use MNI::FileUtilities qw(:check);
 use MNI::MincUtilities qw(:history);

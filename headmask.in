@@ -1,4 +1,4 @@
-#!xPERLx
+#! @PERL@
 #---------------------------------------------------------------------------
 #@COPYRIGHT :
 #             Copyright 1996, Alex P. Zijdenbos
@@ -12,10 +12,10 @@
 #             software for any purpose.  It is provided "as is" without
 #             express or implied warranty.
 #---------------------------------------------------------------------------- 
-#$RCSfile: headmask.pl,v $
+#$RCSfile: headmask.in,v $
 #$Revision: 1.1 $
-#$Author: jason $
-#$Date: 2002-04-09 17:20:07 $
+#$Author: rotor $
+#$Date: 2006-04-18 19:10:37 $
 #$State: Exp $
 #---------------------------------------------------------------------------
 

@@ -1,4 +1,4 @@
-#!xPERLx -w
+#! @PERL@
  
 #---------------------------------------------------------------------------
 #@COPYRIGHT :
@@ -13,12 +13,14 @@
 #             software for any purpose.  It is provided "as is" without
 #             express or implied warranty.
 #---------------------------------------------------------------------------- 
-#$RCSfile: nu_correct_norm.pl,v $
+#$RCSfile: nu_correct_norm.in,v $
 #$Revision: 1.1 $
-#$Author: jason $
-#$Date: 2002-03-28 23:53:20 $
+#$Author: rotor $
+#$Date: 2006-04-18 19:10:38 $
 #$State: Exp $
 #---------------------------------------------------------------------------
+
+use warnings "all";
 
 use MNI::Startup;
 use MNI::Spawn;

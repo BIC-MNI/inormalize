@@ -1,4 +1,4 @@
-#!xPERLx -w
+#! @PERL@
 #---------------------------------------------------------------------------
 #@COPYRIGHT :
 #             Copyright 1996, Alex P. Zijdenbos
@@ -12,10 +12,10 @@
 #             software for any purpose.  It is provided "as is" without
 #             express or implied warranty.
 #---------------------------------------------------------------------------- 
-#$RCSfile: normalize_mri.pl,v $
+#$RCSfile: normalize_mri.in,v $
 #$Revision: 1.1 $
-#$Author: jason $
-#$Date: 2002-03-28 23:53:20 $
+#$Author: rotor $
+#$Date: 2006-04-18 19:10:37 $
 #$State: Exp $
 #---------------------------------------------------------------------------
 
@@ -27,6 +27,8 @@
 # require ParseArgs;
 
 require "ctime.pl";
+
+use warnings "all";
 
 use MNI::Startup;
 

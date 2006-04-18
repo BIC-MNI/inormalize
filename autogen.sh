@@ -4,6 +4,5 @@ set -e
 
 aclocal -I m4
 autoheader
-automake --add-missing
-autoconf
-
+automake --add-missing --copy
+autoreconf
