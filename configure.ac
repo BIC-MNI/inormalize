@@ -1,7 +1,7 @@
 # Require autoconf 2.57 or newer.
 AC_PREREQ([2.57])
 
-AC_INIT([inormalize],[1.0.1], [Alex Zidjenbos <alex@bic.mni.mcgill.ca>])
+AC_INIT([inormalize],[1.0], [Alex Zidjenbos <alex@bic.mni.mcgill.ca>])
 AC_CONFIG_SRCDIR([inormalize.cc])
 AM_INIT_AUTOMAKE
 AC_CONFIG_HEADERS([config.h])

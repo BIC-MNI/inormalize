@@ -14,9 +14,9 @@
 #             express or implied warranty.
 #---------------------------------------------------------------------------- 
 #$RCSfile: nu_correct_norm.in,v $
-#$Revision: 1.1 $
-#$Author: rotor $
-#$Date: 2006-04-18 19:10:38 $
+#$Revision: 1.2 $
+#$Author: claude $
+#$Date: 2006-05-05 01:21:32 $
 #$State: Exp $
 #---------------------------------------------------------------------------
 
@@ -24,7 +24,6 @@ use warnings "all";
 
 use MNI::Startup;
 use MNI::Spawn;
-use MNI::DataDir;
 use MNI::FileUtilities qw(check_output_dirs);
 use MNI::PathUtilities qw(replace_dir);
 use Getopt::Tabular;
