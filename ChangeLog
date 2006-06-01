@@ -1,3 +1,6 @@
+2006-06-01  Claude Lepage <claude@bic.mni.mcgill.ca>
+        * fix some casts in InormalizeArgs.cc
+
 2006-04-18  Andrew L Janke  <a.janke@gmail.com>
 	* Added COPYING and fixed up perl autoconf stuff
 	* added epm-header.in

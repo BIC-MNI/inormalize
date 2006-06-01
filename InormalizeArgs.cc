@@ -12,9 +12,9 @@
               express or implied warranty.
 ---------------------------------------------------------------------------- 
 $RCSfile: InormalizeArgs.cc,v $
-$Revision: 1.2 $
-$Author: bert $
-$Date: 2005-08-17 23:14:26 $
+$Revision: 1.3 $
+$Author: claude $
+$Date: 2006-06-01 21:14:55 $
 $State: Exp $
 --------------------------------------------------------------------------*/
 #include "InormalizeArgs.h"
@@ -104,19 +104,19 @@ ArgvInfo InormalizeArgs::argTable[] = {
    "Minimum number of voxels needed for estimation."},
   {"-constrained", ARGV_CONSTANT, (char *) (int) TRUE, (char *)&InormalizeArgs::constrained,
    "Constrain the ratio array to [10e-0.1, 10e+0.1]"},
-  {"-rms", ARGV_CONSTANT, (char *) InormalizeArgs::RMS, (char *) &InormalizeArgs::method,
+  {"-rms", ARGV_CONSTANT, (char *)(int)InormalizeArgs::RMS, (char *) &InormalizeArgs::method,
    "Minimize RMS voxel difference."},
-  {"-vr", ARGV_CONSTANT, (char *) InormalizeArgs::VR, (char *) &InormalizeArgs::method,
+  {"-vr", ARGV_CONSTANT, (char *)(int)InormalizeArgs::VR, (char *) &InormalizeArgs::method,
    "Minimize variance of ratios."},
-  {"-ratioOfMeans", ARGV_CONSTANT, (char *) InormalizeArgs::RATIO_OF_MEANS, 
+  {"-ratioOfMeans", ARGV_CONSTANT, (char *)(int)InormalizeArgs::RATIO_OF_MEANS, 
    (char *) &InormalizeArgs::method, "Use the ratio of voxel means."},
-  {"-ratioOfMedians", ARGV_CONSTANT, (char *) InormalizeArgs::RATIO_OF_MEDIANS, 
+  {"-ratioOfMedians", ARGV_CONSTANT, (char *)(int)InormalizeArgs::RATIO_OF_MEDIANS, 
    (char *) &InormalizeArgs::method, "Use the ratio of voxel medians."},
-  {"-meanOfRatios", ARGV_CONSTANT, (char *) InormalizeArgs::MEAN_OF_RATIOS, 
+  {"-meanOfRatios", ARGV_CONSTANT, (char *)(int)InormalizeArgs::MEAN_OF_RATIOS, 
    (char *) &InormalizeArgs::method, "Use the mean of voxel ratios."},
-  {"-meanOfLogRatios", ARGV_CONSTANT, (char *) InormalizeArgs::MEAN_OF_LOG_RATIOS, 
+  {"-meanOfLogRatios", ARGV_CONSTANT, (char *)(int)InormalizeArgs::MEAN_OF_LOG_RATIOS, 
    (char *) &InormalizeArgs::method, "Use the mean of voxel ratios in the log domain."},
-  {"-medianOfRatios", ARGV_CONSTANT, (char *) InormalizeArgs::MEDIAN_OF_RATIOS, 
+  {"-medianOfRatios", ARGV_CONSTANT, (char *)(int)InormalizeArgs::MEDIAN_OF_RATIOS, 
    (char *) &InormalizeArgs::method, "Use the median of voxel ratios (default)."},
 
   {NULL, ARGV_HELP, (char *) NULL, (char *) NULL, 
