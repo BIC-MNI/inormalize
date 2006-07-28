@@ -14,9 +14,9 @@
 #             express or implied warranty.
 #---------------------------------------------------------------------------- 
 #$RCSfile: lgmask.in,v $
-#$Revision: 1.2 $
+#$Revision: 1.3 $
 #$Author: rotor $
-#$Date: 2006-07-28 05:51:58 $
+#$Date: 2006-07-28 06:11:17 $
 #$State: Exp $
 #---------------------------------------------------------------------------
 
@@ -208,8 +208,7 @@ sub LowGradientMask {
 	my($file) = $InFile;
 	# Create gradient volume
 	if (defined(@SubSample)) {
-	    my(@fileStart, @fileStep, @fileLength, @fileDircos);
-	    &volume_params($file, \@start, \@step, \@length, \@dircos);
+	    &volume_params($file, undef, \@step, undef, undef);
 	    
 	    $SubSampledVol = "${TmpDir}/subsampled.mnc";
 	    foreach $s (@step) { $s *= shift(@SubSample); }

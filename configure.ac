@@ -15,6 +15,9 @@ AC_PROG_CXX
 AC_PROG_INSTALL
 AC_DISABLE_SHARED
 
+# figure out where perl is
+AC_PATH_PROGS(PERL, [perl], no)
+
 # Checks for libraries.  See m4/README.
 mni_REQUIRE_VOLUMEIO
 mni_REQUIRE_EBTKS

@@ -1,4 +1,4 @@
-#! @PERL@
+#! /usr/bin/perl
 #---------------------------------------------------------------------------
 #@COPYRIGHT :
 #             Copyright 1996, Alex P. Zijdenbos
@@ -13,9 +13,9 @@
 #             express or implied warranty.
 #---------------------------------------------------------------------------- 
 #$RCSfile: normalize_mri.in,v $
-#$Revision: 1.2 $
+#$Revision: 1.3 $
 #$Author: rotor $
-#$Date: 2006-07-28 05:51:58 $
+#$Date: 2006-07-28 06:11:17 $
 #$State: Exp $
 #---------------------------------------------------------------------------
 
@@ -202,7 +202,7 @@ sub Initialize
     ($InormArgsTbl, $MaskArgsTbl, $LGargsTbl, $outputArgsTbl) = &SetupArgTables;
 
     GetOptions ([@DefaultArgs, @$InormArgsTbl, @$MaskArgsTbl,
-	@$LGargsTbl, @$outputArgsTbl], \@ARGV) || &Fatal();
+	@$LGargsTbl, @$outputArgsTbl], \@ARGV) || die "Died parsing arguments\n\n";
 
     if ($Execute) {
 	&check_output_dirs($TmpDir);
@@ -214,12 +214,6 @@ sub Initialize
     MNI::Spawn::SetOptions("verbose" => $Verbose, 
 			    "execute" => $Execute,
                           );    
-    &AddOption(($Verbose) ? '-verbose' : '-quiet', 
-	       [\$Inormalize, 
-		\$CreateLGmask,
-		\$MincMath,
-		\$MincResample,
-		\$ResampleLabels]);
     
     # Check args
     if ($#ARGV < 1) {
@@ -232,19 +226,19 @@ sub Initialize
     &check_files($InFile) || die "\n";
 
     if (defined($Mask)) {
-	&CheckFiles($Mask) || &Fatal();
-	($Mask = &CheckSampling($Mask, $InFile, 1, '-tricubic')) || &Fatal();
+	&CheckFiles($Mask) || die();
+	($Mask = &CheckSampling($Mask, $InFile, 1, '-tricubic')) || die();
     }
 
     if (defined($BrainMask)) {
-	&CheckFiles($BrainMask) || &Fatal();
+	&CheckFiles($BrainMask) || die();
 	if (defined($BrainMaskTransform)) {
 	    $ResampledBrainMask = "${TmpDir}/resampled_brain_mask.mnc";
 	    &Spawn("resample_labels -trilinear -transformation $BrainMaskTransform -resample \'-like $InFile -invert_transformation\' $BrainMask $ResampledBrainMask");
 	    $BrainMask = $ResampledBrainMask;
 	}
 	else {
-	    ($BrainMask = &CheckSampling($BrainMask, $InFile, 1, '-trilinear')) || &Fatal();
+	    ($BrainMask = &CheckSampling($BrainMask, $InFile, 1, '-trilinear')) || die();
 	}
 
 	if ($Nerosions > 0) {
@@ -255,12 +249,12 @@ sub Initialize
     }
 
     if (defined($Model)) {
-	&CheckFiles($Model) || &Fatal();
-	($Model = &CheckSampling($Model, $InFile, 0, '-trilinear')) || &Fatal();
+	&CheckFiles($Model) || die();
+	($Model = &CheckSampling($Model, $InFile, 0, '-trilinear')) || die();
     
 	if (defined($ModelMask)) {
-	    &CheckFiles($ModelMask) || &Fatal();
-	    ($ModelMask = &CheckSampling($ModelMask, $InFile, 1, '-tricubic')) || &Fatal();
+	    &CheckFiles($ModelMask) || die();
+	    ($ModelMask = &CheckSampling($ModelMask, $InFile, 1, '-tricubic')) || die();
 	}	
     }
 
@@ -269,7 +263,7 @@ sub Initialize
 	    die "File $OutFile exists!\n";
 	}
 	if ($SaveMask && &ExistsCompressed($SaveMask)) {
-	    &Fatal("File $SaveMask exists!");
+	    die "File $SaveMask exists!\n\n";
 	}
     }
 
@@ -476,7 +470,7 @@ sub CheckSampling {
 #-----------------------------------------------------------------------------
 sub CompNumListsTol
 {
-    &Fatal("CompNumListsTol: wrong number of arguments") unless (@_ == 3);
+    die "CompNumListsTol: wrong number of arguments\n\n" unless (@_ == 3);
     my ($a1, $a2, $tol) = @_;
    
     return 0 unless (@$a1 == @$a2);
