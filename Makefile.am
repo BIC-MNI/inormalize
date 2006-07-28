@@ -9,7 +9,7 @@ EXTRA_DIST = $(m4_files) \
 	nu_correct_norm.in \
 	normalize_mri.in \
 	lgmask.in \
-	headmask.in \
+	headmask \
 	epm-header.in
 
 m4_files = m4/mni_REQUIRE_LIB.m4 m4/mni_REQUIRE_MNILIBS.m4 \

@@ -1,0 +1,69 @@
+#! /usr/bin/env perl
+#
+# rewritten by Andrew Janke - 2006-07-28
+
+use warnings "all";
+use Getopt::Tabular;
+use File::Basename;
+
+
+$me = &basename($0);
+%opt = (
+   verbose => 0,
+   clobber => 0,
+   fake => 0,
+   mask => undef,
+   );
+
+$Help = <<HELP;
+   $me creates a rough binary head mask by thresholding <in.mnc> at a
+   value derived from the histogram under the assumption that the
+   histogram is bimodal.
+HELP
+
+$Usage = "Usage: $me [options] <in.mnc> <out.mnc>\n".
+         "       $me -help to list options\n\n";
+
+@opt_table = (
+   ["-verbose", "boolean", 0, \$opt{verbose},
+      "be verbose" ],
+   ["-clobber", "boolean", 0, \$opt{clobber},
+      "clobber existing files" ],
+   ["-fake", "boolean", 0, \$opt{fake},
+      "do a dry run, (echo cmds only)" ],
+      
+	["Mask options", "section"],
+   ["-mask", "string", 1, \$opt{mask},
+	  "calculate the threshold value over the voxels included in the specified mask only."],
+   );
+
+# Check arguments
+&Getopt::Tabular::SetHelp($Help, $Usage);
+&GetOptions(\@opt_table, \@ARGV) || exit 1;
+die $Usage if ($#ARGV < 0);
+
+$infile = $ARGV[0];
+$outfile = $ARGV[1];
+
+# file checks
+die "$me: Couldn't find infile: $_\n\n" if !-e $infile;
+die "$me: $outfile exists, use -clobber to overwrite\n\n" if (-e $outfile && !$opt{clobber});
+
+# Obtain BG threshold
+$args = "volume_stats -quiet -biModalT $infile";
+$args .= " -mask $opt{mask}" if defined($opt{mask});
+chomp($thresh = `$args`);
+
+# create mask output volume
+&do_cmd('mincmath', '-clobber', '-byte',
+        '-const', $thresh,
+         '-ge',
+         $infile, $outfile);
+
+
+sub do_cmd {
+   print STDOUT "@_\n" if $opt{verbose};
+   if(!$opt{fake}){
+      system(@_) == 0 or die "\n$me: Failed executing @_\n\n";
+      }
+   }

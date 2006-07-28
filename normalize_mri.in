@@ -13,34 +13,22 @@
 #             express or implied warranty.
 #---------------------------------------------------------------------------- 
 #$RCSfile: normalize_mri.in,v $
-#$Revision: 1.1 $
+#$Revision: 1.2 $
 #$Author: rotor $
-#$Date: 2006-04-18 19:10:37 $
+#$Date: 2006-07-28 05:51:58 $
 #$State: Exp $
 #---------------------------------------------------------------------------
 
-# require "ctime.pl";
-# require "file_utilities.pl";
-# require "path_utilities.pl";
-# require "minc_utilities.pl";
-# require "misc_utilities.pl";
-# require ParseArgs;
-
 require "ctime.pl";
-
 use warnings "all";
+use Getopt::Tabular;
 
 use MNI::Startup;
-
+use MNI::Spawn;
 use MNI::FileUtilities qw(:check);
 use MNI::PathUtilities qw(:all);
 use MNI::MincUtilities qw(:history);
 use MNI::MiscUtilities;
-use Getopt::Tabular;
-
-use MNI::Spawn;
-
-#&Startup();
 
 &Initialize();
 
@@ -127,7 +115,6 @@ if ($Compress) {
     &Spawn("gzip -f $OutFile");
 }
 
-#&Cleanup(1);
 
 # ------------------------------ MNI Header ----------------------------------
 #@NAME       : &SetHelp
@@ -202,10 +189,6 @@ sub Initialize
     $ModelMask = ();
 
     # Locate programs
-#    $SearchPath = defined($ENV{'MS_LESION'}) ? 
-#	"$ENV{'MS_LESION'}/bin:$ENV{'MS_LESION'}/extern/bin" :
-#	    "$ENV{'PATH'}:/usr/people/alex/Release/bin:/usr/people/david/public_bin";
-
     &RegisterPrograms (["dilate_volume",
                         "inormalize",
                         "lgmask",
@@ -213,13 +196,6 @@ sub Initialize
                         "mincresample",
                         "resample_labels",
                         "volume_stats"]);
-    #     ($Inormalize     = &FindProgram ("inormalize",      $SearchPath)) || &Fatal();
-#     ($CreateLGmask   = &FindProgram ("lgmask",          $SearchPath)) || &Fatal();
-#     ($MincMath       = &FindProgram ("mincmath",        $SearchPath)) || &Fatal();
-#     ($MincResample   = &FindProgram ("mincresample",    $SearchPath)) || &Fatal();
-#     ($ResampleLabels = &FindProgram ("resample_labels", $SearchPath)) || &Fatal();
-#     ($VolumeStats    = &FindProgram ("volume_stats",    $SearchPath)) || &Fatal();
-
     &SetHelp;
 
     # Setup arg tables and parse args

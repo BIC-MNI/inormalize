@@ -14,9 +14,9 @@
 #             express or implied warranty.
 #---------------------------------------------------------------------------- 
 #$RCSfile: lgmask.in,v $
-#$Revision: 1.1 $
+#$Revision: 1.2 $
 #$Author: rotor $
-#$Date: 2006-04-18 19:10:37 $
+#$Date: 2006-07-28 05:51:58 $
 #$State: Exp $
 #---------------------------------------------------------------------------
 
@@ -133,17 +133,6 @@ sub Initialize
                            "execute" => $Execute,
                            );
     
-#     $SearchPath = defined($ENV{'MS_LESION'}) ? 
-# 	"$ENV{'MS_LESION'}/bin:$ENV{'MS_LESION'}/extern/bin" :
-# 	    "$ENV{'PATH'}:/usr/people/alex/Release/bin";	    
-    
-#     ($AutoCrop     = &FindProgram ("autocrop",     $SearchPath)) || &Fatal();
-#     ($MincBlur     = &FindProgram ("mincblur",     $SearchPath)) || &Fatal();
-#     ($HeadMask     = &FindProgram ("headmask",     $SearchPath)) || &Fatal();
-#     ($MincMath     = &FindProgram ("mincmath",     $SearchPath)) || &Fatal();
-#     ($MincResample = &FindProgram ("mincresample", $SearchPath)) || &Fatal();
-#     ($VolumeStats  = &FindProgram ("volume_stats", $SearchPath)) || &Fatal();
-
     RegisterPrograms([qw(autocrop mincblur headmask mincmath mincresample volume_stats)]);
 
     if ($Execute) {
