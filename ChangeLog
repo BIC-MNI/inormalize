@@ -1,3 +1,7 @@
+2006-09-04  Claude Lepage <claude@bic.mni.mcgill.ca>
+            Andrew L Janke  <a.janke@gmail.com>
+	* update perl scripts .in
+
 2006-06-01  Claude Lepage <claude@bic.mni.mcgill.ca>
         * fix some casts in InormalizeArgs.cc
 
