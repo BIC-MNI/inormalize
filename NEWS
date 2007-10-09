@@ -1,4 +1,9 @@
 
+New in Release 1.0.2
+
+* make inormalize work in float/double and test for same sizes for 
+  volume and model
+
 New in Release 1.0.1
 
 * update perl scripts .in

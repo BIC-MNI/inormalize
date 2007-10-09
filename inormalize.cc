@@ -12,9 +12,9 @@
               express or implied warranty.
 ---------------------------------------------------------------------------- 
 $RCSfile: inormalize.cc,v $
-$Revision: 1.3 $
-$Author: bert $
-$Date: 2005-08-17 23:14:26 $
+$Revision: 1.4 $
+$Author: claude $
+$Date: 2007-10-09 21:56:35 $
 $State: Exp $
 --------------------------------------------------------------------------*/
 /* ----------------------------- MNI Header -----------------------------------
@@ -30,7 +30,10 @@ $State: Exp $
 @CALLS      : 
 @CREATED    : April 11, 1995 (Alex Zijdenbos)
 @MODIFIED   : $Log: inormalize.cc,v $
-@MODIFIED   : Revision 1.3  2005-08-17 23:14:26  bert
+@MODIFIED   : Revision 1.4  2007-10-09 21:56:35  claude
+@MODIFIED   : fixed inormalize for float data type
+@MODIFIED   :
+@MODIFIED   : Revision 1.3  2005/08/17 23:14:26  bert
 @MODIFIED   : Minor changes for some C++ warnings and issues
 @MODIFIED   :
 @MODIFIED   : Revision 1.2  2002/03/28 23:53:19  jason
@@ -66,7 +69,7 @@ $State: Exp $
 #include <iostream>
 using namespace std;
 #include <time.h>
-#include "EBTKS/CachedArray.h"
+//  #include "EBTKS/CachedArray.h"
 #include "EBTKS/Dictionary.h"
 #include "EBTKS/FileIO.h"
 #include "EBTKS/OpTimer.h"
@@ -148,6 +151,7 @@ main(int argc, char *argv[])
     selfNormalizeMain(MIxspace, validVoxels, args, history);
 
   if (args.oneConst) {
+
     SimpleArray<float> volumeArray;
 
     floatArrayFromVolume(volumeArray, args.volume, validVoxels, &nVoxels, args.verbose);
@@ -195,6 +199,18 @@ main(int argc, char *argv[])
   }
 
   else if (args.model) {
+
+    // Make sure volume and model have compatible sizes.
+    int volume_sizes[3], model_sizes[3];
+    get_volume_sizes(args.volume, volume_sizes);
+    get_volume_sizes(args.model, model_sizes);
+    if( ( model_sizes[0] != volume_sizes[0] ) || 
+        ( model_sizes[1] != volume_sizes[1] ) ||
+        ( model_sizes[2] != volume_sizes[2] ) ) {
+      cerr << "Volume and model dimensions do not match!" << endl;
+      exit(EXIT_FAILURE);
+    }
+
     // Convert entire volume to float arrays (cached to conserve memory)
     SimpleArray<float> volumeArray;
     SimpleArray<float> modelArray;
@@ -599,8 +615,8 @@ reMapVolume(Volume volume, const LinearMap& iMap, int verbose)
   double realMin = CONVERT_VOXEL_TO_VALUE(volume, voxelMin);
   double realMax = CONVERT_VOXEL_TO_VALUE(volume, voxelMax);
 
-  //  cout << "(" << voxelMin << ", " << voxelMax << ") -> (" 
-  //       << realMin << ", " << realMax << ")" << endl;
+  // cout << "(" << voxelMin << ", " << voxelMax << ") -> (" 
+  //      << realMin << ", " << realMax << ")" << endl;
 
   if (verbose)
     cout << "Normalizing (" << iMap.factor() << ", " << iMap.offset() << ")" << endl;
@@ -613,12 +629,29 @@ reMapVolume(Volume volume, const LinearMap& iMap, int verbose)
   
   //cout << "FullMap: " << fullMap << endl;
 
-  //cout << "(" << voxelMin << ", " << voxelMax << ") -> (" 
-  //<< realMin << ", " << realMax << ")" << endl;
+  // cout << "(" << voxelMin << ", " << voxelMax << ") -> (" 
+  // << realMin << ", " << realMax << ")" << endl;
 
-  // Reset the voxel range and set the desired real range
-  set_volume_voxel_range(volume, voxelMin, voxelMax);
+  // Scale the voxel values if not working with ranges (for FLOAT and DOUBLE).
+  if( !volume->real_range_set ) {
+    cout << "Fixing voxel values for real data type..." << endl;
+    int sizes[3];
+    get_volume_sizes(volume, sizes);
+    for (unsigned d1 = 0; d1 < sizes[0]; d1++) {
+      for (unsigned d2 = 0; d2 < sizes[1]; d2++) {
+        for (unsigned d3 = 0; d3 < sizes[2]; d3++) {
+	  Real value = get_volume_voxel_value(volume, d1, d2, d3, 0, 0);
+	  set_volume_voxel_value(volume, d1, d2, d3, 0, 0, 
+			         clamp(iMap(value), realMin, realMax));
+        }
+      }
+    }
+  } else {
+    // Reset the voxel range and set the desired real range
+    set_volume_voxel_range(volume, voxelMin, voxelMax);
+  }
   set_volume_real_range(volume, realMin, realMax);
+
 }
 
 //
