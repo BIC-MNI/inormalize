@@ -207,7 +207,7 @@ main(int argc, char *argv[])
     if( ( model_sizes[0] != volume_sizes[0] ) || 
         ( model_sizes[1] != volume_sizes[1] ) ||
         ( model_sizes[2] != volume_sizes[2] ) ) {
-      cerr << "Volume and model dimensions do not match!" << endl;
+      cerr << "VIO_Volume and model dimensions do not match!" << endl;
       exit(EXIT_FAILURE);
     }
 
@@ -275,7 +275,7 @@ main(int argc, char *argv[])
 //
 //
 void
-scanVoxelRange(const Volume volume, double *voxelMin, double *voxelMax)
+scanVoxelRange(const VIO_Volume volume, double *voxelMin, double *voxelMax)
 {
   int sizes[3];
   get_volume_sizes(volume, sizes);
@@ -283,13 +283,13 @@ scanVoxelRange(const Volume volume, double *voxelMin, double *voxelMax)
   unsigned D2 = sizes[1];
   unsigned D3 = sizes[2];
 
-  Real minVal = get_volume_voxel_value(volume, 0, 0, 0, 0, 0);
-  Real maxVal = minVal;
+  VIO_Real minVal = get_volume_voxel_value(volume, 0, 0, 0, 0, 0);
+  VIO_Real maxVal = minVal;
 
   for (unsigned d1 = 0; d1 < D1; d1++)
     for (unsigned d2 = 0; d2 < D2; d2++)
       for (unsigned d3 = 0; d3 < D3; d3++) {
-	Real value = get_volume_voxel_value(volume, d1, d2, d3, 0, 0);
+	VIO_Real value = get_volume_voxel_value(volume, d1, d2, d3, 0, 0);
 	if (value < minVal)
 	  minVal = value;
 	else if (value > maxVal)
@@ -333,7 +333,7 @@ getValidVoxels(const InormalizeArgs& args, BoolArray& validVoxels)
       maskD3 = maskSizes[2];
 
       if (!args.useWorldCoord && ((maskD1 != D1) || (maskD2 != D2) || (maskD3 != D3))) {
-	cerr << "Volume and mask dimensions do not match!" << endl;
+	cerr << "VIO_Volume and mask dimensions do not match!" << endl;
 	exit(EXIT_FAILURE);
       }
     }
@@ -346,23 +346,23 @@ getValidVoxels(const InormalizeArgs& args, BoolArray& validVoxels)
 	for (unsigned d3 = 0; d3 < D3; d3++) {
 	  Boolean valid = TRUE;
 	  if (useThreshold) {
-	    Real value = get_volume_real_value(args.volume, d1, d2, d3, 0, 0);
+	    VIO_Real value = get_volume_real_value(args.volume, d1, d2, d3, 0, 0);
 	    if ((value < minT) || (value > maxT))
 	      valid = FALSE;
 	  }
 	  
 	  if (valid && args.mask) {
-	    Real maskValue = 0;
+	    VIO_Real maskValue = 0;
 	    if (args.useWorldCoord) {
-	      Real xWorld, yWorld, zWorld;
+	      VIO_Real xWorld, yWorld, zWorld;
 	      convert_3D_voxel_to_world(args.volume, d1, d2, d3, 
 					&xWorld, &yWorld, &zWorld);
-	      Real voxel1, voxel2, voxel3;
+	      VIO_Real voxel1, voxel2, voxel3;
 	      convert_3D_world_to_voxel(args.mask, xWorld, yWorld, zWorld,
 					&voxel1, &voxel2, &voxel3);
-	      int v1 = ROUND(voxel1);
-	      int v2 = ROUND(voxel2);
-	      int v3 = ROUND(voxel3);
+	      int v1 = VIO_ROUND(voxel1);
+	      int v2 = VIO_ROUND(voxel2);
+	      int v3 = VIO_ROUND(voxel3);
 	      if ((v1 >= 0) && (v2 >= 0) && (v3 >= 0) &&
 		  (v1 < maskD1) && (v2 < maskD2) && (v3 < maskD3))
 		maskValue = get_volume_real_value(args.mask, v1, v2, v3, 0, 0);
@@ -394,7 +394,7 @@ getValidVoxels(const InormalizeArgs& args, BoolArray& validVoxels)
 //
 //
 void
-floatArrayFromVolume(FloatArray& array, const Volume volume, 
+floatArrayFromVolume(FloatArray& array, const VIO_Volume volume, 
 		     const BoolArray& validVoxels, unsigned *N, 
 		     int verbose)
 {
@@ -435,7 +435,7 @@ floatArrayFromVolume(FloatArray& array, const Volume volume,
 //
 //
 void
-floatArraysFromSlices(const Volume volume, const BoolArray& validVoxels,
+floatArraysFromSlices(const VIO_Volume volume, const BoolArray& validVoxels,
 		      unsigned axis, unsigned slice1, unsigned slice2, 
 		      FloatArray& array1, FloatArray& array2)
 {
@@ -459,8 +459,8 @@ floatArraysFromSlices(const Volume volume, const BoolArray& validVoxels,
     for (unsigned d2 = 0; d2 < D2; d2++)
       for (unsigned d3 = 0; d3 < D3; d3++, valid1++, valid2++)
 	if (validVoxels[valid1] && validVoxels[valid2]) {
-	  Real value1 = get_volume_real_value(volume, slice1, d2, d3, 0, 0);
-	  Real value2 = get_volume_real_value(volume, slice2, d2, d3, 0, 0);
+	  VIO_Real value1 = get_volume_real_value(volume, slice1, d2, d3, 0, 0);
+	  VIO_Real value2 = get_volume_real_value(volume, slice2, d2, d3, 0, 0);
 	  if (value1 && value2) {
 	    array1.append(value1);
 	    array2.append(value2);
@@ -482,8 +482,8 @@ floatArraysFromSlices(const Volume volume, const BoolArray& validVoxels,
       //      const Boolean *valid2 = validBase + (d1*D2 + slice2)*D3;
       for (unsigned d3 = 0; d3 < D3; d3++, valid1++, valid2++)
 	if (validVoxels[valid1] && validVoxels[valid2]) {
-	  Real value1 = get_volume_real_value(volume, d1, slice1, d3, 0, 0);
-	  Real value2 = get_volume_real_value(volume, d1, slice2, d3, 0, 0);
+	  VIO_Real value1 = get_volume_real_value(volume, d1, slice1, d3, 0, 0);
+	  VIO_Real value2 = get_volume_real_value(volume, d1, slice2, d3, 0, 0);
 	  if (value1 && value2) {
 	    array1.append(value1);
 	    array2.append(value2);
@@ -506,8 +506,8 @@ floatArraysFromSlices(const Volume volume, const BoolArray& validVoxels,
       unsigned valid2 = d1*D2*D3 + slice2;
       for (unsigned d2 = 0; d2 < D2; d2++) {
 	if (validVoxels[valid1] && validVoxels[valid2]) {
-	  Real value1 = get_volume_real_value(volume, d1, d2, slice1, 0, 0);
-	  Real value2 = get_volume_real_value(volume, d1, d2, slice2, 0, 0);
+	  VIO_Real value1 = get_volume_real_value(volume, d1, d2, slice1, 0, 0);
+	  VIO_Real value2 = get_volume_real_value(volume, d1, d2, slice2, 0, 0);
 	  if (value1 && value2) {
 	    array1.append(value1);
 	    array2.append(value2);
@@ -548,7 +548,7 @@ selfNormalizeMain(char *dimension, const BoolArray& validVoxels,
 //
 //
 Array<LinearMap>
-selfNormalize(Volume volume, const BoolArray& validVoxels, char *dimension, 
+selfNormalize(VIO_Volume volume, const BoolArray& validVoxels, char *dimension, 
 	      const InormalizeArgs& args, int method)
 {
   if (method < -1)
@@ -605,7 +605,7 @@ selfNormalize(Volume volume, const BoolArray& validVoxels, char *dimension,
 //
 //
 void
-reMapVolume(Volume volume, const LinearMap& iMap, int verbose)
+reMapVolume(VIO_Volume volume, const LinearMap& iMap, int verbose)
 {
   // Scan voxel range, just in case the volume attributes are messed up
   double voxelMin, voxelMax;
@@ -640,7 +640,7 @@ reMapVolume(Volume volume, const LinearMap& iMap, int verbose)
     for (unsigned d1 = 0; d1 < sizes[0]; d1++) {
       for (unsigned d2 = 0; d2 < sizes[1]; d2++) {
         for (unsigned d3 = 0; d3 < sizes[2]; d3++) {
-	  Real value = get_volume_voxel_value(volume, d1, d2, d3, 0, 0);
+	  VIO_Real value = get_volume_voxel_value(volume, d1, d2, d3, 0, 0);
 	  set_volume_voxel_value(volume, d1, d2, d3, 0, 0, 
 			         clamp(iMap(value), realMin, realMax));
         }
@@ -658,7 +658,7 @@ reMapVolume(Volume volume, const LinearMap& iMap, int verbose)
 //
 //
 void
-reMapVolume(Volume volume, int axis, const Array<LinearMap>& iMaps, int verbose)
+reMapVolume(VIO_Volume volume, int axis, const Array<LinearMap>& iMaps, int verbose)
 {
   int sizes[3];
   get_volume_sizes(volume, sizes);
@@ -685,7 +685,7 @@ reMapVolume(Volume volume, int axis, const Array<LinearMap>& iMaps, int verbose)
       for (unsigned d3 = 0; d3 < D3; d3++) {
 	if (axis == 2)
 	  iMap = iMaps[d3];
-	Real value = get_volume_voxel_value(volume, d1, d2, d3, 0, 0);
+	VIO_Real value = get_volume_voxel_value(volume, d1, d2, d3, 0, 0);
 
 	if (value < voxelMin)
 	  voxelMin = value;
@@ -725,7 +725,7 @@ reMapVolume(Volume volume, int axis, const Array<LinearMap>& iMaps, int verbose)
   cout << "Axis: " << axis << endl
        << "voxelMin: " << voxelMin << " voxelMax: " << voxelMax << endl
        << "Voxel->real map: " << voxelToRealMap << endl
-       << "Real->voxel map: " << realToVoxelMap << endl;
+       << "VIO_Real->voxel map: " << realToVoxelMap << endl;
        */
 
   // Remap volume
@@ -752,7 +752,7 @@ reMapVolume(Volume volume, int axis, const Array<LinearMap>& iMaps, int verbose)
 	  iMap.concat(voxelToRealMap);
 	    //	  iMap = realToVoxelMap(iMaps[d3](voxelToRealMap));
 	}
-	Real value = get_volume_voxel_value(volume, d1, d2, d3, 0, 0);
+	VIO_Real value = get_volume_voxel_value(volume, d1, d2, d3, 0, 0);
 	set_volume_voxel_value(volume, d1, d2, d3, 0, 0, 
 			       clamp(iMap(value), voxelMin, voxelMax));
       }
@@ -921,7 +921,7 @@ determineMap(const FloatArray& modelArray, const FloatArray& dataArray,
 //
 //
 Boolean
-saveVolume(const Volume volume, const Path& path, const Path& mincModel,
+saveVolume(const VIO_Volume volume, const Path& path, const Path& mincModel,
 	   const MString& history, int compress, int verbose)
 {
   char *mincModelString = 0;

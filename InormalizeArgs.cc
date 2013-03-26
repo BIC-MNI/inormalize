@@ -313,12 +313,12 @@ InormalizeArgs::InormalizeArgs(int argc, char **argv)
 //
 //
 //
-Volume
+VIO_Volume
 loadVolume(const Path& path, int verbose)
 {
-  Real amountDone;
+  VIO_Real amountDone;
   volume_input_struct inputInfo;
-  Volume volume = 0;
+  VIO_Volume volume = 0;
 
   if (verbose)
     cout << "Reading volume " << path << flush;

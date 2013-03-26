@@ -29,26 +29,26 @@ typedef SimpleArray<float>   FloatArray;
 typedef SimpleArray<Boolean> BoolArray;
 //typedef SimpleArray<float>   FloatArray;
 
-void      scanVoxelRange(const Volume volume, double *voxelMin, double *voxelMax);
+void      scanVoxelRange(const VIO_Volume volume, double *voxelMin, double *voxelMax);
 unsigned  getValidVoxels(const InormalizeArgs& args, BoolArray& VV);
-void      floatArrayFromVolume(FloatArray& array, const Volume volume, 
+void      floatArrayFromVolume(FloatArray& array, const VIO_Volume volume, 
 			       const BoolArray& validVoxels, unsigned *N = 0, 
 			       int verbose = 0);
-void      floatArraysFromSlices(const Volume volume, const BoolArray& validVoxels,
+void      floatArraysFromSlices(const VIO_Volume volume, const BoolArray& validVoxels,
 				unsigned axis, unsigned slice1, unsigned slice2, 
 				FloatArray& array1, FloatArray& array2);
 void      selfNormalizeMain(char *dimension, const BoolArray& validVoxels,
 			    const InormalizeArgs& args, MString& history);
 Array<LinearMap> 
-          selfNormalize(Volume volume, const BoolArray& validVoxels, 
+          selfNormalize(VIO_Volume volume, const BoolArray& validVoxels, 
 			char *dimension, const InormalizeArgs& args, int method = -1);
-void      reMapVolume(Volume volume, const LinearMap& iMap, int verbose = 0);
-void      reMapVolume(Volume volume, int axis, const Array<LinearMap>& iMaps, 
+void      reMapVolume(VIO_Volume volume, const LinearMap& iMap, int verbose = 0);
+void      reMapVolume(VIO_Volume volume, int axis, const Array<LinearMap>& iMaps, 
 		      int verbose = 0);
 LinearMap determineMap(const FloatArray& modelArray, 
 		       const FloatArray& dataArray, 
 		       const InormalizeArgs& args, int method = -1);
-Boolean   saveVolume(const Volume volume, const Path& path, const Path& mincModel,
+Boolean   saveVolume(const VIO_Volume volume, const Path& path, const Path& mincModel,
 		     const MString& history, int compress = 1, int verbose = 0);
 MString&  appendToString(MString& string, const LinearMap& iMap);
 MString&  appendToString(MString& string, const Array<LinearMap>& iMaps);

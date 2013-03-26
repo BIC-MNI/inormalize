@@ -34,7 +34,7 @@ public:
   Path    maskPath;
   Path    outputPath;
 
-  Volume  volume, model, mask;
+  VIO_Volume  volume, model, mask;
   Boolean oneConst, twoConst, useRange;
 
   static int    clobber;
@@ -77,7 +77,7 @@ public:
   ~InormalizeArgs() {}
 };
 
-Volume loadVolume(const Path& path, int verbose = 0);
+VIO_Volume loadVolume(const Path& path, int verbose = 0);
 
 #endif
 
