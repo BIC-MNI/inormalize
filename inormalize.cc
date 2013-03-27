@@ -936,7 +936,7 @@ saveVolume(const VIO_Volume volume, const Path& path, const Path& mincModel,
   outputPath.removeCompressedExtension();
   if (output_modified_volume(outputPath, NC_UNSPECIFIED, FALSE, 0.0, 0.0, 
 			     volume, mincModelString, historyString,
-			     (minc_output_options *) NULL) != OK) {
+			     (minc_output_options *) NULL) != VIO_OK) {
     cerr << "Couldn't save " << outputPath << endl;
     return FALSE;
   }

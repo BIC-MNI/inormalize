@@ -324,7 +324,7 @@ loadVolume(const Path& path, int verbose)
     cout << "Reading volume " << path << flush;
   if (start_volume_input((char *) path.string(), 3, NULL, NC_UNSPECIFIED, 
 			 TRUE, 0.0, 0.0, TRUE, &volume, (minc_input_options *) NULL, 
-			 &inputInfo) != OK)
+			 &inputInfo) != VIO_OK)
     return 0;
 
   while (input_more_of_volume(volume, &inputInfo, &amountDone))
