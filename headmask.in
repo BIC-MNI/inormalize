@@ -50,8 +50,8 @@ die "$me: Couldn't find infile: $_\n\n" if !-e $infile;
 die "$me: $outfile exists, use -clobber to overwrite\n\n" if (-e $outfile && !$opt{clobber});
 
 # Obtain BG threshold
-$args = "volume_stats -quiet -biModalT $infile";
-$args .= " -mask $opt{mask}" if defined($opt{mask});
+$args = "mincstats -quiet -biModalT $infile";
+$args .= " -mask $opt{mask} -mask_binvalue 1" if defined($opt{mask});
 chomp($thresh = `$args`);
 
 # create mask output volume
