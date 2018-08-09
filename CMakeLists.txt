@@ -74,3 +74,4 @@ PREPARE_SCRIPT( nu_correct_norm.in nu_correct_norm)
 PREPARE_SCRIPT( normalize_mri.in   normalize_mri)
 PREPARE_SCRIPT( lgmask.in  lgmask)
 PREPARE_SCRIPT( headmask.in headmask)
+
