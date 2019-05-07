@@ -1,3 +1,6 @@
+2014-10-30  Claude Lepage <claude@bic.mni.mcgill.ca>
+	* verbose = 0 in Spawn calls with stdout in a variable
+
 2007-10-09  Claude Lepage <claude@bic.mni.mcgill.ca>
 	* test that the image sizes are the same for the volume and the model
 	* scale the image voxel-by-voxel for real data types (float, double)
