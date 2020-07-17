@@ -242,7 +242,8 @@ sub LowGradientMask {
 
     # Obtain gradient median over the mask area
 #    my($result, $stats, $floor, $ceil);
-	&Spawn("volume_stats -quiet -mask $Mask -floor 1e-10 -median $final_grad", stdout => \$ceil);
+	&Spawn("volume_stats -quiet -mask $Mask -floor 1e-10 -median $final_grad", 
+               verbose => 0, stdout => \$ceil);
 #    $stats =~ /Min:\s+(\d.*)\n/i;
 #    $floor = $1;
 #    $stats =~ /Median:\s+(\d.*)\n/i;
