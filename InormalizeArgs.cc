@@ -17,6 +17,10 @@ $Author: claude $
 $Date: 2006-06-01 21:14:55 $
 $State: Exp $
 --------------------------------------------------------------------------*/
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif //HAVE_CONFIG_H
+
 #include "InormalizeArgs.h"
 #include <iostream>
 using namespace std;
