@@ -1,4 +1,9 @@
-/* config.h.in.  Generated from configure.ac by autoheader.  */
+/* Define to 1 if you have the `finite' function. */
+#cmakedefine HAVE_FINITE 1
+
+/* Define to 1 if you have the `isfinite' function. */
+#cmakedefine HAVE_ISFINITE 1
+
 
 /* Define if should build with MINC 2.0 */
 #undef MINC2

@@ -64,6 +64,9 @@ $State: Exp $
  *
 @COPYRIGHT  :
 ---------------------------------------------------------------------------- */
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "inormalize.h"
 #include <iostream>
@@ -642,7 +645,7 @@ reMapVolume(VIO_Volume volume, const LinearMap& iMap, int verbose)
         for (unsigned d3 = 0; d3 < sizes[2]; d3++) {
 	  VIO_Real value = get_volume_voxel_value(volume, d1, d2, d3, 0, 0);
 	  set_volume_voxel_value(volume, d1, d2, d3, 0, 0, 
-			         clamp(iMap(value), realMin, realMax));
+			         ::clamp(iMap(value), realMin, realMax));
         }
       }
     }
@@ -754,7 +757,7 @@ reMapVolume(VIO_Volume volume, int axis, const Array<LinearMap>& iMaps, int verb
 	}
 	VIO_Real value = get_volume_voxel_value(volume, d1, d2, d3, 0, 0);
 	set_volume_voxel_value(volume, d1, d2, d3, 0, 0, 
-			       clamp(iMap(value), voxelMin, voxelMax));
+			       ::clamp(iMap(value), voxelMin, voxelMax));
       }
     }
     if (verbose)
