@@ -1,3 +1,6 @@
+New in Release 1.0.3
+
+* verbose = 0 in Spawn calls with stdout in a variable
 
 New in Release 1.0.2
 

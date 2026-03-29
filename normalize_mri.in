@@ -365,7 +365,7 @@ sub BrainMask {
     
     # Obtain threshold value
     if ($Execute) {
-      &Spawn("volume_stats -quiet -none -biModalT $file", stdout => \$T);
+      &Spawn("volume_stats -quiet -none -biModalT $file", verbose => 0, stdout => \$T);
       chop($T);
     }
 
