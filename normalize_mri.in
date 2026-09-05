@@ -19,7 +19,6 @@
 #$State: Exp $
 #---------------------------------------------------------------------------
 
-require "ctime.pl";
 use warnings "all";
 use Getopt::Tabular;
 
@@ -166,7 +165,7 @@ HELP
 #-----------------------------------------------------------------------------
 sub Initialize
 {
-    chop ($ctime = &ctime(time));
+    $ctime = localtime(time);
     $HistoryLine = "$ctime>>> $0 @ARGV";
 
     $Clobber   = 0;

@@ -20,12 +20,10 @@
 #$State: Exp $
 #---------------------------------------------------------------------------
 
-require "ctime.pl";
-
 use warnings "all";
 
 use MNI::FileUtilities qw(:check);
-use MNI::MincUtilities qw(:history);
+use MNI::MincUtilities qw(:history :geometry);
 
 use MNI::Startup;
 use MNI::Spawn;
@@ -92,7 +90,7 @@ HELP
 #-----------------------------------------------------------------------------
 sub Initialize
 {
-    chop ($ctime = &ctime(time));
+    $ctime = localtime(time);
     $HistoryLine = "$ctime>>> $0 @ARGV\n";
 
     $Clobber  = 0;
@@ -207,7 +205,7 @@ sub LowGradientMask {
 
 	my($file) = $InFile;
 	# Create gradient volume
-	if (defined(@SubSample)) {
+	if (@SubSample) {
 	    &volume_params($file, undef, \@step, undef, undef);
 	    
 	    $SubSampledVol = "${TmpDir}/subsampled.mnc";
