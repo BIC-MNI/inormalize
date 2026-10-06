@@ -1,0 +1,42 @@
+# Citation metadata for inormalize (Citation File Format, https://citation-file-format.github.io/).
+# The author list comes from the commit history and from the history comments in the files.
+
+cff-version: 1.2.0
+title: inormalize
+message: >-
+  If you use this software, please cite it using the metadata from this file.
+type: software
+authors:
+  - given-names: Alex P.
+    family-names: Zijdenbos
+  - given-names: Vladimir
+    family-names: Fonov
+    email: vladimir.fonov@gmail.com
+    affiliation: McGill University
+    orcid: "https://orcid.org/0000-0003-3402-7749"
+  - given-names: Jason
+    family-names: Lerch
+    orcid: "https://orcid.org/0000-0001-6164-2881"
+  - given-names: Andrew L.
+    family-names: Janke
+    orcid: "https://orcid.org/0000-0003-0547-5171"
+  - given-names: Claude
+    family-names: Lepage
+  - given-names: Gabriel A.
+    family-names: Devenyi
+    email: gdevenyi@gmail.com
+    affiliation: Douglas Mental Health University Institute
+    orcid: "https://orcid.org/0000-0002-7766-1187"
+  - given-names: Robert D.
+    family-names: Vincent
+  - given-names: Greg
+    family-names: Ward
+repository-code: "https://github.com/BIC-MNI/inormalize"
+abstract: Intensity normalization tools for MINC image volumes.
+keywords:
+  - MINC
+  - medical imaging
+  - neuroimaging
+  - MRI
+  - intensity normalization
+license-url: "https://github.com/BIC-MNI/inormalize/blob/master/COPYING"
